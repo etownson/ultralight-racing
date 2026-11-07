@@ -119,6 +119,7 @@ function(t,e){"object"==typeof exports&&"undefined"!=typeof module?e(exports):"f
 (() => {
 'use strict';
 const LAPS = 3;
+const nLaps = () => ttActive ? 1 : LAPS;   // Time Trial is a single lap that restarts itself
 const $ = id => document.getElementById(id);
 const clamp = (v,a,b) => v<a?a:v>b?b:v;
 const lerp = (a,b,t) => a+(b-a)*t;
@@ -393,7 +394,7 @@ function decRun(s){ const bin=atob(s), b=new Uint8Array(bin.length&~1); for(let 
   const a=new Int16Array(b.buffer), n=a.length-a.length%7, f=new Float32Array(n);
   for(let i=0;i<n;i++) f[i]=i%7<3?a[i]/10:a[i]/32767; return f; }
 const validRec = r => r && typeof r.t==='number' && isFinite(r.t) && r.t>30 && r.t<3600 && typeof r.run==='string' && r.run.length>100 && r.run.length<400000
-  && Array.isArray(r.splits) && r.splits.length<=N*LAPS+1 && r.splits.every(x=>typeof x==='number');
+  && Array.isArray(r.splits) && r.splits.length<=N+1 && r.splits.every(x=>typeof x==='number');
 
 // --- ghosts ---
 function makeGhost(rec,name,color,helm,isMe){
@@ -413,7 +414,7 @@ function poseGhost(g,t){
   g.root.position.set(g.x,g.y,g.z); g.body.quaternion.copy(_q1);
   let p=0; while(p<g.splits.length&&g.splits[p]<=t) p++; g.passed=p;
 }
-function ghostProgress(g){ if(g.passed>=N*LAPS+1) return 1e9-g.finish;
+function ghostProgress(g){ if(g.passed>=N+1) return 1e9-g.finish;
   const r=rings[g.passed%N]; return g.passed+1-clamp(Math.hypot(r.x-g.x,r.y-g.y,r.z-g.z)/r.seg,0,1); }
 const ttPos = () => 1+ghosts.filter(g=>ghostProgress(g)>progress(player)).length;
 function updateGhosts(dt){
@@ -507,6 +508,12 @@ function renderBoard(el){
   board.slice(0,5).forEach((b,i)=>{ const me=b.id===myId; line(`${i+1}. ${me?'You':(names[b.id]||'Pilot')}  ${fmt(b.t)}`,me?{color:'#ffd34d'}:null); });
   const gs=[...(local||board.some(b=>b.id===myId)?['your best']:[]),...board.filter(b=>b.id!==myId).slice(0,2).map(b=>names[b.id]||'Pilot')];
   if(gs.length) line('Ghosts you’ll race: '+gs.join(', '),{opacity:.6,fontSize:'11px',marginTop:'4px'});
+}
+function ttNextRun(){
+  const run=buildRec(), local=loadLocalGhost();
+  if(!local||run.t<local.t) saveLocalGhost(run);
+  if(DB&&myId) submitRun(run);
+  beginRace();                    // same as RACE AGAIN: back to the takeoff spot, countdown, ghost = new best
 }
 function showTTResults(){
   state='results';
@@ -874,7 +881,7 @@ function refreshTitle(){
   rows.forEach((el,i)=>{ el.style.outline=(padId&&i===titleRow)?'1px solid rgba(255,211,77,.5)':'none'; el.style.borderRadius='10px'; });
   $('modeRow').style.padding='6px';
   $('bRace').classList.toggle('alt',titleMode!=='race'); $('bTT').classList.toggle('alt',titleMode!=='tt'); $('bLive').classList.toggle('alt',titleMode!=='live'); $('bLive').style.display=ROOM?'':'none'; $('bFreeT').classList.toggle('alt',titleMode!=='free');
-  $('modeDesc').textContent = titleMode==='race' ? '3 laps against 3 rival pilots · pickups · engine heat' : titleMode==='tt' ? '3 laps solo against the clock · race your best ghost'+(DB?' and friends’ fastest runs':'')+' · no pickups' : titleMode==='live' ? '👥 Race the friends who have the game open right now' : 'Take off from the runway and fly anywhere · land in any field · watch your engine temp';
+  $('modeDesc').textContent = titleMode==='race' ? '3 laps against 3 rival pilots · pickups · engine heat' : titleMode==='tt' ? 'One-lap runs, back to the runway after each · race your best ghost'+(DB?' and friends’ fastest runs':'')+' · no pickups' : titleMode==='live' ? '👥 Race the friends who have the game open right now' : 'Take off from the runway and fly anywhere · land in any field · watch your engine temp';
   document.querySelectorAll('.opt').forEach(el=>{ el.style.borderRadius='10px'; el.style.padding='2px 6px'; });
   const b=loadBest()[DIFFS[diff].n]; $('bestLine').textContent=b&&titleMode==='race'?`Your best on ${DIFFS[diff].n}: race ${fmt(b.race)} · lap ${fmt(b.lap)}`:''; renderBoard($('ttBoard'));
 }
@@ -1013,10 +1020,10 @@ function passRing(r,g){
   if((p-1)%N===0 && r.finish==null){
     const done=(p-1)/N;
     if(done>=1){ const lt=simT-r.lapStart; r.laps.push(lt);
-      if(r===player&&done<LAPS){ const best=Math.min(...r.laps); const isBest=done>1&&lt<=best; say((isBest?'BEST LAP ':'LAP ')+fmt(lt),1.8,isBest?'#7dffa0':'#ffd34d'); } }
+      if(r===player&&done<nLaps()){ const best=Math.min(...r.laps); const isBest=done>1&&lt<=best; say((isBest?'BEST LAP ':'LAP ')+fmt(lt),1.8,isBest?'#7dffa0':'#ffd34d'); } }
     r.lapStart=simT;
-    if(done===LAPS){ r.finish=simT; if(r===player) playerFinished(); }
-    else if(r===player&&done===LAPS-1) setTimeout(()=>{ if(state==='race') say('FINAL LAP',1.8,'#ff9a4a'); },1900);
+    if(done===nLaps()){ r.finish=simT; if(r===player) playerFinished(); }
+    else if(r===player&&nLaps()>1&&done===LAPS-1) setTimeout(()=>{ if(state==='race') say('FINAL LAP',1.8,'#ff9a4a'); },1900);
   }
   if(r===player&&!r.auto){ beep(g===rings[0]?660:880,.09,'triangle',.14); setTimeout(()=>beep(1320,.08,'triangle',.08),70); rumble(.15,.45,90); flashRing(g,'#ffe066'); }
 }
@@ -1029,7 +1036,7 @@ function playerFinished(){ player.auto=true; const pos=ttActive?ttPos():liveActi
 function finishOthers(){ let guard=0; const dt=1/30, saved=simT;
   while(racers.some(r=>r.finish==null)&&guard<30*900){ simT+=dt; for(const r of racers) if(r.finish==null){ aiControl(r,dt); physics(r,dt); } guard++; } simT=saved; }
 function showResults(){
-  if(ttActive){ showTTResults(); return; }
+  if(ttActive){ ttNextRun(); return; }
   if(liveActive){ showLiveResults(); return; }
   finishOthers(); state='results';
   const st=racers.slice().sort((a,b)=>(a.finish??1e9)-(b.finish??1e9)), pos=st.indexOf(player)+1;
@@ -1523,8 +1530,8 @@ function drawHUD(t){
   const p=player, st=standings(), pos=ttActive?ttPos():liveActive?livePos():st.indexOf(p)+1, nPl=ttActive?ghosts.length+1:liveActive?1+Object.keys(liveSeen).length:racers.length;
   box(12,12,150,112);
   txt('POS',24,34,12,'rgba(255,255,255,.65)'); txt(pos+'/'+nPl,24,66,32,'#ffd34d','left',700);
-  const lap=Math.min(LAPS,Math.max(1,Math.floor((p.passed-1)/N)+1));
-  txt('LAP',96,34,12,'rgba(255,255,255,.65)'); txt(lap+'/'+LAPS,96,66,24,'#fff','left',700);
+  const lap=Math.min(nLaps(),Math.max(1,Math.floor((p.passed-1)/N)+1));
+  txt('LAP',96,34,12,'rgba(255,255,255,.65)'); txt(lap+'/'+nLaps(),96,66,24,'#fff','left',700);
   // wind relative to heading (arrow up = tailwind)
   const wm=Math.hypot(wind.x,wind.z), wa=Math.atan2(wind.z,wind.x)-p.hd;
   hx.save(); hx.translate(40,98); hx.strokeStyle='rgba(255,255,255,.35)'; hx.lineWidth=1.5; hx.beginPath(); hx.arc(0,0,14,0,Math.PI*2); hx.stroke();
