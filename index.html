@@ -83,7 +83,7 @@
     <div id="padStatus" class="pad">🎮 No controller detected. Connect one and press any button.</div>
     <div id="bestLine" class="best"></div>
     <div id="ttBoard" class="best" style="display:none"></div>
-    <div class="hint">Race: fly through the rings in order. Miss one and you skip to the next ring with a 3-second slowdown. Grab the <b>?</b> boxes for a ⚡ boost, 🚀 lock-on missile, 🔫 bullet burst or 💣 mine.<br>The faster you fly, the wider you turn, so ease off before sharp corners. Throttle in the red zone heats the engine; overheat and it cuts out.<br>Flying: it's fully aerobatic. Left/right rolls the plane and the wings stay where you leave them (a little dihedral eases shallow banks back to level). Back stick pulls g, so loop it from about 100 km/h; push past neutral for negative g and inverted flight. Hands off, it settles at the trimmed speed; trim nose-up or nose-down to change that. Throttle sets climb or descent. Steep turns need back pressure; pull too hard when slow and it stalls. To recover, release back pressure, add power, and use opposite rudder in a spin. Hold a look button to glance out the side when lining up to land.<br>Free flight: no rivals to beat. Land anywhere, take off again, buzz the treetops, but trees and buildings wreck the plane.<br>Touch: drag on the left half to fly, ＋/－ throttle, USE for pickups.</div>
+    <div class="hint">Race: fly through the rings in order. Miss one and you skip to the next ring with a 5-second slowdown. Grab the <b>?</b> boxes for a ⚡ boost, 🚀 lock-on missile, 🔫 bullet burst or 💣 mine.<br>The faster you fly, the wider you turn, so ease off before sharp corners. Throttle in the red zone heats the engine; overheat and it cuts out.<br>Flying: it's fully aerobatic. Left/right rolls the plane and the wings stay where you leave them (a little dihedral eases shallow banks back to level). Back stick pulls g, so loop it from about 100 km/h; push past neutral for negative g and inverted flight. Hands off, it settles at the trimmed speed; trim nose-up or nose-down to change that. Throttle sets climb or descent. Steep turns need back pressure; pull too hard when slow and it stalls. To recover, release back pressure, add power, and use opposite rudder in a spin. Hold a look button to glance out the side when lining up to land.<br>Free flight: no rivals to beat. Land anywhere, take off again, buzz the treetops, but trees and buildings wreck the plane.<br>Touch: drag on the left half to fly, ＋/－ throttle, USE for pickups.</div>
   </div>
 </div>
 
@@ -1016,11 +1016,11 @@ function physics(r,dt){
   if(Math.abs(r.z)>BZ){ r.z=Math.sign(r.z)*BZ; r.hd=-r.hd; r.spd*=.85; }
 }
 // Player crossed the ring's plane outside the hole (or ended up past it): warn, move on to the next ring, 3 s slowdown.
-const PEN_T=3, PEN_V=20, MISS_LAT=110;   // penalty seconds, speed cap m/s (72 km/h), how far off to the side still counts as a miss
+const PEN_T=5, PEN_V=20, MISS_LAT=110;   // penalty seconds, speed cap m/s (72 km/h), how far off to the side still counts as a miss
 function missRing(r,g){
   r.penT=PEN_T; r.spd=Math.min(r.spd,Math.max(PEN_V,r.spd*.75)); missed=0;
   passRing(r,g,true);
-  if(r.finish==null){ say('MISSED RING · 3 s PENALTY',2,'#ff7a5a'); beep(180,.22,'sawtooth',.12); setTimeout(()=>beep(130,.3,'sawtooth',.12),200); rumble(.7,.4,350); flashRing(g,'#ff4d5e'); }
+  if(r.finish==null){ say('MISSED RING · 5 s PENALTY',2,'#ff7a5a'); beep(180,.22,'sawtooth',.12); setTimeout(()=>beep(130,.3,'sawtooth',.12),200); rumble(.7,.4,350); flashRing(g,'#ff4d5e'); }
 }
 function passRing(r,g,miss){
   if(r===player&&ttActive) recSplit();
