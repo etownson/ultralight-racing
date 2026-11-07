@@ -83,7 +83,7 @@
     <div id="padStatus" class="pad">🎮 No controller detected. Connect one and press any button.</div>
     <div id="bestLine" class="best"></div>
     <div id="ttBoard" class="best" style="display:none"></div>
-    <div class="hint">Race: fly through the rings in order. Grab the <b>?</b> boxes for a ⚡ boost, 🚀 lock-on missile, 🔫 bullet burst or 💣 mine.<br>The faster you fly, the wider you turn, so ease off before sharp corners. Throttle in the red zone heats the engine; overheat and it cuts out.<br>Flying: it's fully aerobatic. Left/right rolls the plane and the wings stay where you leave them (a little dihedral eases shallow banks back to level). Back stick pulls g, so loop it from about 100 km/h; push past neutral for negative g and inverted flight. Hands off, it settles at the trimmed speed; trim nose-up or nose-down to change that. Throttle sets climb or descent. Steep turns need back pressure; pull too hard when slow and it stalls. To recover, release back pressure, add power, and use opposite rudder in a spin. Hold a look button to glance out the side when lining up to land.<br>Free flight: no rivals to beat. Land anywhere, take off again, buzz the treetops, but trees and buildings wreck the plane.<br>Touch: drag on the left half to fly, ＋/－ throttle, USE for pickups.</div>
+    <div class="hint">Race: fly through the rings in order. Miss one and you skip to the next ring with a 3-second slowdown. Grab the <b>?</b> boxes for a ⚡ boost, 🚀 lock-on missile, 🔫 bullet burst or 💣 mine.<br>The faster you fly, the wider you turn, so ease off before sharp corners. Throttle in the red zone heats the engine; overheat and it cuts out.<br>Flying: it's fully aerobatic. Left/right rolls the plane and the wings stay where you leave them (a little dihedral eases shallow banks back to level). Back stick pulls g, so loop it from about 100 km/h; push past neutral for negative g and inverted flight. Hands off, it settles at the trimmed speed; trim nose-up or nose-down to change that. Throttle sets climb or descent. Steep turns need back pressure; pull too hard when slow and it stalls. To recover, release back pressure, add power, and use opposite rudder in a spin. Hold a look button to glance out the side when lining up to land.<br>Free flight: no rivals to beat. Land anywhere, take off again, buzz the treetops, but trees and buildings wreck the plane.<br>Touch: drag on the left half to fly, ＋/－ throttle, USE for pickups.</div>
   </div>
 </div>
 
@@ -724,7 +724,7 @@ function setupRace(allAI){
     const [f,s]=slots[order[i]], x=P2[0][0]+rw.dx*f+rw.px*s, z=P2[0][1]+rw.dz*f+rw.pz*s;
     Object.assign(r,{ ai:i>0||allAI, auto:false, skill:i>0?DIFFS[diff].t[i-1]:1, x, z, y:rw.h+1, hd, pitch:0, pcmd:0, spd:0, thr:i===0?.85:0,
       steer:0, bank:0, air:0, passed:0, lapStart:0, laps:[], finish:null, lane:(Math.random()-.5)*5, vlane:(Math.random()-.5)*3, noise:0, recover:false, lastPass:0, satT:0, extendT:0, ph:Math.random()*10,
-      item:null, itemHold:0, react:1, gnd:true, trim:0, f:null, crashed:0, rudder:0, brake:false, stalled:false, spin:0, vStall:12, hornT:0, slowT:0, boostT:0, burst:0, burstT:0, fxT:0, heat:0, overT:0, hotMode:false });
+      item:null, itemHold:0, react:1, gnd:true, trim:0, f:null, crashed:0, rudder:0, brake:false, stalled:false, spin:0, vStall:12, hornT:0, slowT:0, penT:0, boostT:0, burst:0, burstT:0, fxT:0, heat:0, overT:0, hotMode:false });
     r.tag.visible = i>0 || allAI;
   });
   simT=0; missed=0; resultsTimer=-1; wind.dir=Math.random()*Math.PI*2; wind.mag=3;
@@ -978,7 +978,7 @@ function physics(r,dt){
     if(r.heat>=1){ r.overT=4; if(meRace(r)||freeMe(r)){ say('OVERHEAT!',1.6,'#ff4d5e'); rumble(.9,.9,600); boom(.5,.2,400); } } }
   const effThr = r.overT>0 ? .08 : r.thr;
   const rud=r.rudder||0;
-  r.slowT=Math.max(0,r.slowT-dt); r.boostT=Math.max(0,r.boostT-dt); r.bonkT=Math.max(0,(r.bonkT||0)-dt);
+  r.slowT=Math.max(0,r.slowT-dt); r.penT=Math.max(0,(r.penT||0)-dt); r.boostT=Math.max(0,r.boostT-dt); r.bonkT=Math.max(0,(r.bonkT||0)-dt);
   realisticFlight(r,dt,onGround,effThr,rud);
   r.spd = Math.max(0,r.spd);
   r.prop.rotation.x += dt*(30+70*effThr);
@@ -1002,7 +1002,8 @@ function physics(r,dt){
   const g=rings[r.passed%N];
   const s0=(px-g.x)*g.nx+(pz-g.z)*g.nz, s1=(r.x-g.x)*g.nx+(r.z-g.z)*g.nz;
   if(s0<0&&s1>=0){ const t=s0/(s0-s1); const qx=px+(r.x-px)*t-g.x, qy=py+(r.y-py)*t-g.y, qz=pz+(r.z-pz)*t-g.z;
-    if(Math.hypot(qx,qy,qz)<RR-.2) passRing(r,g); }
+    if(Math.hypot(qx,qy,qz)<RR-.2) passRing(r,g);
+    else if(meRace(r)&&Math.abs(qx*g.px+qz*g.pz)<MISS_LAT) missRing(r,g); }
   // ring tube collisions
   for(const q of rings){ const vx=r.x-q.x, vy=r.y-q.y, vz=r.z-q.z; if(vx*vx+vy*vy+vz*vz>196) continue;
     const a=vx*q.nx+vz*q.nz, rx=vx-a*q.nx, rz=vz-a*q.nz, rl=Math.hypot(rx,vy,rz)||1e-6;
@@ -1014,7 +1015,14 @@ function physics(r,dt){
   if(Math.abs(r.x)>BX){ r.x=Math.sign(r.x)*BX; r.hd=wrap(Math.PI-r.hd); r.spd*=.85; }
   if(Math.abs(r.z)>BZ){ r.z=Math.sign(r.z)*BZ; r.hd=-r.hd; r.spd*=.85; }
 }
-function passRing(r,g){
+// Player crossed the ring's plane outside the hole (or ended up past it): warn, move on to the next ring, 3 s slowdown.
+const PEN_T=3, PEN_V=20, MISS_LAT=110;   // penalty seconds, speed cap m/s (72 km/h), how far off to the side still counts as a miss
+function missRing(r,g){
+  r.penT=PEN_T; r.spd=Math.min(r.spd,Math.max(PEN_V,r.spd*.75)); missed=0;
+  passRing(r,g,true);
+  if(r.finish==null){ say('MISSED RING · 3 s PENALTY',2,'#ff7a5a'); beep(180,.22,'sawtooth',.12); setTimeout(()=>beep(130,.3,'sawtooth',.12),200); rumble(.7,.4,350); flashRing(g,'#ff4d5e'); }
+}
+function passRing(r,g,miss){
   if(r===player&&ttActive) recSplit();
   r.passed++; r.lastPass=simT; r.straightIn=false; r.recover=false; const p=r.passed;
   if((p-1)%N===0 && r.finish==null){
@@ -1025,7 +1033,7 @@ function passRing(r,g){
     if(done===nLaps()){ r.finish=simT; if(r===player) playerFinished(); }
     else if(r===player&&nLaps()>1&&done===LAPS-1) setTimeout(()=>{ if(state==='race') say('FINAL LAP',1.8,'#ff9a4a'); },1900);
   }
-  if(r===player&&!r.auto){ beep(g===rings[0]?660:880,.09,'triangle',.14); setTimeout(()=>beep(1320,.08,'triangle',.08),70); rumble(.15,.45,90); flashRing(g,'#ffe066'); }
+  if(r===player&&!r.auto&&!miss){ beep(g===rings[0]?660:880,.09,'triangle',.14); setTimeout(()=>beep(1320,.08,'triangle',.08),70); rumble(.15,.45,90); flashRing(g,'#ffe066'); }
 }
 function progress(r){ if(r.finish!=null) return 1e9-r.finish; const g=rings[r.passed%N]; return r.passed+1-clamp(Math.hypot(g.x-r.x,g.y-r.y,g.z-r.z)/g.seg,0,1); }
 const standings=()=>racers.slice().sort((a,b)=>progress(b)-progress(a));
@@ -1268,6 +1276,7 @@ function realisticFlight(r,dt,onGround,effThr,rud){
           - 9.8*f[1]
           - Math.abs(rud)*.8*r.air
           - (r.slowT>0 ? 1.8 : 0)
+          - (r.penT>0 ? Math.max(0,V-PEN_V)*1.6 + .8 : 0)
           - (r.stalled ? .006*V*V : 0);
   r.dv=a; r.dvf=(r.dvf||0)+(a-(r.dvf||0))*Math.min(1,dt*5);   // smoothed accel for the damping terms
   r.spd=Math.max(4, V+a*dt);
@@ -1313,13 +1322,13 @@ function startFree(fromTitle){
   if(fromTitle){ setupRace(false); savePrefs(); show('title',0); show('pause',0); respawn(player,true); }
   state='free'; ttActive=false; liveActive=false; clearGhosts(); clearProjectiles(); clearDebris();
   show('results',0); show('hudBtns',1); show('touch',isTouch); document.querySelector('.tb.use').style.display='none'; $('brakeBtn').style.display='';
-  const p=player; Object.assign(p,{auto:false,ai:false,item:null,heat:0,overT:0,slowT:0,boostT:0,burst:0,crashed:0});
+  const p=player; Object.assign(p,{auto:false,ai:false,item:null,heat:0,overT:0,slowT:0,penT:0,boostT:0,burst:0,crashed:0});
   p.root.visible=true; p.tag.visible=false;
   free={landings:0,best:null,crashes:0,lowT:0,lowCool:0};
   say(fromTitle ? '✈ FREE FLIGHT · throttle up, then pull back to take off' : '✈ FREE FLIGHT · land anywhere, buzz the treetops',3.5,'#7dffa0');
 }
 function respawn(r,manual){
-  const f=-125; Object.assign(r,{x:P2[0][0]+rw.dx*f, z:P2[0][1]+rw.dz*f, y:rw.h+1, hd:Math.atan2(rw.dz,rw.dx), spd:0, pitch:0, pcmd:0, thr:0, air:0, gnd:true, bank:0, steer:0, crashed:0, heat:0, overT:0, trim:0, stalled:false, spin:0});
+  const f=-125; Object.assign(r,{x:P2[0][0]+rw.dx*f, z:P2[0][1]+rw.dz*f, y:rw.h+1, hd:Math.atan2(rw.dz,rw.dx), spd:0, pitch:0, pcmd:0, thr:0, air:0, gnd:true, bank:0, steer:0, crashed:0, heat:0, overT:0, penT:0, trim:0, stalled:false, spin:0});
   r.root.visible=true; clearDebris(); snapCam=true;
   say('READY FOR TAKEOFF · throttle up, then pull back',2.5,'#7dffa0');
 }
@@ -1457,7 +1466,7 @@ function update(dt){
     if(state==='free') freeFlight(dt);
     updateWeapons(dt);
     if(state==='race'&&!player.auto){ const g=rings[player.passed%N], rx=player.x-g.x, rz=player.z-g.z;
-      const along=rx*g.nx+rz*g.nz, lat=Math.abs(rx*g.px+rz*g.pz); missed=(along>4&&along<110&&lat<110)?missed+dt:0; } else missed=0;
+      const along=rx*g.nx+rz*g.nz, lat=Math.abs(rx*g.px+rz*g.pz); missed=(along>4&&along<110&&lat<MISS_LAT)?missed+dt:0; if(missed>1) missRing(player,g); } else missed=0;
     if(resultsTimer>0){ resultsTimer-=dt; if(resultsTimer<=0) showResults(); }
   }
   for(const f of fx){ f.t+=dt; const s=1+f.t*1.6; f.m.scale.set(s,s,s); f.m.material.opacity=Math.max(0,.9-f.t*1.8); }
@@ -1640,7 +1649,7 @@ function drawHUD(t){
     else txt('GET READY',VW/2,VH/2-40,44,'#fff','center',700);
     txt('Set your throttle · after GO, '+(invert?'pull back (↓)':'push up (↑)')+' to climb out',VW/2,VH/2+10,16,'rgba(255,255,255,.9)','center'); }
   if(msg.t>0){ hx.globalAlpha=Math.min(1,msg.t*2); txt(msg.text,VW/2,VH*.28,40,msg.color,'center',700); hx.globalAlpha=1; }
-  if(missed>.4&&Math.sin(t*8)>-.3) txt('MISSED RING · TURN BACK',VW/2,VH*.28+46,24,'#ff7a5a','center',700);
+  if(p.penT>0&&state==='race'&&p.finish==null&&Math.sin(t*8)>-.3) txt('PENALTY · SLOWED '+p.penT.toFixed(1)+' s',VW/2,VH*.28+46,22,'#ff7a5a','center',700);
   if(stick.id!==null){ hx.strokeStyle='rgba(255,255,255,.5)'; hx.lineWidth=2; hx.beginPath(); hx.arc(stick.ox,stick.oy,60,0,7); hx.stroke();
     hx.fillStyle='rgba(255,211,77,.6)'; hx.beginPath(); hx.arc(stick.ox+stick.x*60,stick.oy+stick.y*60,18,0,7); hx.fill(); }
 }
