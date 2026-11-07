@@ -52,6 +52,7 @@
 <div id="hudBtns" class="hidden"><button id="bPause">❚❚</button><button id="bMute">🔊</button></div>
 <div id="touch" class="hidden">
   <div class="tb use" data-k="use" style="right:12px;bottom:188px">USE</div>
+  <div class="tb use" data-k="msl" id="mslBtn" style="right:104px;bottom:188px;display:none;background:rgba(255,140,60,.5)">MSL</div>
   <div class="tb use" data-k="brake" id="brakeBtn" style="right:12px;bottom:188px;display:none;background:rgba(255,77,94,.4)">BRAKE</div>
   <div class="tb" data-k="up" style="right:18px;bottom:104px">＋</div>
   <div class="tb" data-k="down" style="right:18px;bottom:22px">－</div>
@@ -60,8 +61,8 @@
 <div id="title" class="overlay">
   <div class="panel">
     <h1>ULTRALIGHT</h1>
-    <div class="sub">RING RACING · FREE FLIGHT</div>
-    <div class="row modes" id="modeRow" style="margin:4px 0 14px"><button id="bRace" class="mode">🏁 RACE</button><button id="bTT" class="mode alt">⏱ TIME TRIAL</button><button id="bLive" class="mode alt" style="display:none">👥 LIVE</button><button id="bFreeT" class="mode alt">✈ FREE FLIGHT</button></div>
+    <div class="sub">RING RACING · DOGFIGHTS · FREE FLIGHT</div>
+    <div class="row modes" id="modeRow" style="margin:4px 0 14px"><button id="bRace" class="mode">🏁 RACE</button><button id="bTT" class="mode alt">⏱ TIME TRIAL</button><button id="bCombat" class="mode alt">⚔ COMBAT</button><button id="bLive" class="mode alt" style="display:none">👥 LIVE</button><button id="bFreeT" class="mode alt">✈ FREE FLIGHT</button></div>
     <div class="best" id="modeDesc" style="margin:-6px 0 12px"></div>
     <div class="opt"><span class="l">COURSE</span><button class="alt" id="cL">◀</button><span class="v" id="cName">Hump Day</span><button class="alt" id="cR">▶</button></div>
     <div class="best" id="cTag" style="margin:-8px 0 8px;font-size:12px"></div>
@@ -78,6 +79,7 @@
       <tr><td>Look left / right</td><td>Z / C (hold)</td><td>D-pad ← → (hold)</td></tr>
       <tr><td>Wheel brakes</td><td>B</td><td>B (Circle)</td></tr>
       <tr><td>Use pickup</td><td>Space</td><td>LB / RB (shoulder)</td></tr>
+      <tr><td>Combat: guns / missile</td><td>Space (hold) / X</td><td>RB (hold) / LB</td></tr>
       <tr><td>Pause</td><td>Esc / P</td><td>Start (Menu)</td></tr>
       <tr><td>Confirm</td><td>Enter / Space</td><td>A (Cross)</td></tr>
       <tr><td>Mute</td><td>M</td><td>Y (Triangle)</td></tr>
@@ -85,7 +87,7 @@
     <div id="padStatus" class="pad">🎮 No controller detected. Connect one and press any button.</div>
     <div id="bestLine" class="best"></div>
     <div id="ttBoard" class="best" style="display:none"></div>
-    <div class="hint">Race: fly through the rings in order. Miss one and you skip to the next ring with a 5-second slowdown. Grab the <b>?</b> boxes for a ⚡ boost, 🚀 lock-on missile, 🔫 bullet burst or 💣 mine.<br>The faster you fly, the wider you turn, so ease off before sharp corners. Throttle in the red zone heats the engine; overheat and it cuts out.<br>Flying: it's fully aerobatic. Left/right rolls the plane and the wings stay where you leave them (a little dihedral eases shallow banks back to level). Back stick pulls g, so loop it from about 100 km/h; push past neutral for negative g and inverted flight. Hands off, it settles at the trimmed speed; trim nose-up or nose-down to change that. Throttle sets climb or descent. Steep turns need back pressure; pull too hard when slow and it stalls. To recover, release back pressure, add power, and use opposite rudder in a spin. Hold a look button to glance out the side when lining up to land.<br>Free flight: no rivals to beat. Land anywhere, take off again, buzz the treetops, but trees and buildings wreck the plane.<br>Touch: drag on the left half to fly, ＋/－ throttle, USE for pickups.</div>
+    <div class="hint">Race: fly through the rings in order. Miss one and you skip to the next ring with a 5-second slowdown. Grab the <b>?</b> boxes for a ⚡ boost, 🚀 lock-on missile, 🔫 bullet burst or 💣 mine.<br>Combat: take off and shoot down every enemy plane. Guns fire in bursts (hold to keep firing); <b>?</b> boxes give 150 rounds or 4 lock-on missiles. Too much damage and your plane blows up. In 👥 Live you can fight them together: more enemies, and if you're shot down you're repaired on the runway in 30 s.<br>The faster you fly, the wider you turn, so ease off before sharp corners. Throttle in the red zone heats the engine; overheat and it cuts out.<br>Flying: it's fully aerobatic. Left/right rolls the plane and the wings stay where you leave them (a little dihedral eases shallow banks back to level). Back stick pulls g, so loop it from about 100 km/h; push past neutral for negative g and inverted flight. Hands off, it settles at the trimmed speed; trim nose-up or nose-down to change that. Throttle sets climb or descent. Steep turns need back pressure; pull too hard when slow and it stalls. To recover, release back pressure, add power, and use opposite rudder in a spin. Hold a look button to glance out the side when lining up to land.<br>Free flight: no rivals to beat. Land anywhere, take off again, buzz the treetops, but trees and buildings wreck the plane.<br>Touch: drag on the left half to fly, ＋/－ throttle, USE for pickups.</div>
   </div>
 </div>
 
@@ -101,10 +103,10 @@
 <div id="results" class="overlay hidden">
   <div class="panel">
     <h2 id="resTitle">RESULTS</h2>
-    <table class="res"><thead><tr><th>POS</th><th>PILOT</th><th>TIME</th><th>BEST LAP</th></tr></thead><tbody id="resBody"></tbody></table>
+    <table class="res"><thead><tr id="resHead"><th>POS</th><th>PILOT</th><th>TIME</th><th>BEST LAP</th></tr></thead><tbody id="resBody"></tbody></table>
     <div id="resNote" class="best"></div>
     <div class="row"><button id="bAgain">RACE AGAIN</button><button class="alt" id="bFree">✈ FREE FLIGHT</button><button class="alt" id="bMenu">MENU</button></div>
-    <div class="hint">Enter / A to race again · F / X for free flight · Esc / B for menu</div>
+    <div class="hint" id="resHint">Enter / A to race again · F / X for free flight · Esc / B for menu</div>
   </div>
 </div>
 <div id="toast"></div>
@@ -394,7 +396,7 @@ const DIFFS=[{n:'Easy',t:[.35,.4,.45],cf:.88,cap:.8,sl:1.6},{n:'Normal',t:[.62,.
 // phi bank limit rad (~74°), tim turn-in margin, pm final-approach distance flown on the path to ring height, cg climb gradient
 // before slowing to climb speed vcl, vsu max climb m/s, co climb-out speed off the runway; vc cruise × (unused, 1)
 let diff=1, invert=true, swapSticks=false, titleMode='race', savedCourse=DEFAULT_COURSE;   // invert=true: standard airplane pitch (up = dive)
-try{ const v=localStorage.getItem('ulr3-diff'); if(v!==null&&+v>=0&&+v<3) diff=+v; invert=localStorage.getItem('ulr3-pitch')!=='climb'; swapSticks=localStorage.getItem('ulr3-sticks')==='1'; { const m=localStorage.getItem('ulr3-mode'); titleMode=m==='free'||m==='tt'?m:'race'; } savedCourse=courseOf(localStorage.getItem('ulr3-course')); }catch(e){}
+try{ const v=localStorage.getItem('ulr3-diff'); if(v!==null&&+v>=0&&+v<3) diff=+v; invert=localStorage.getItem('ulr3-pitch')!=='climb'; swapSticks=localStorage.getItem('ulr3-sticks')==='1'; { const m=localStorage.getItem('ulr3-mode'); titleMode=m==='free'||m==='tt'||m==='combat'?m:'race'; } savedCourse=courseOf(localStorage.getItem('ulr3-course')); }catch(e){}
 const PILOTS=[{name:'You',color:'#ffcf3a',helm:'#ffffff'},{name:'Dusty',color:'#ff6b5a',helm:'#ffd0e0'},{name:'Kite',color:'#4fb3ff',helm:'#fff6a8'},{name:'Maverick',color:'#b07cff',helm:'#c8ffd8'}];
 const ALL_RACERS = PILOTS.map(p => { const m=makePlane(p.color,p.helm); const tag=nameSprite(p.name,p.color); m.root.add(tag); return { ...p, ...m, tag }; });
 let racers=ALL_RACERS, player=racers[0], simT=0, state='title', prevState=null, countdown=0, resultsTimer=-1, missed=0;
@@ -632,7 +634,8 @@ function ingest(peer,by,isMe,p,now){
     // a race announced by someone: join if we're in the lobby (or on a live results screen) and it hasn't started
     const ra=p.ra;
     if(ra&&typeof ra.id==='string'&&/^[a-z0-9]{4,16}$/.test(ra.id)&&isNum(ra.at)&&ra.at>now+1500&&ra.at<now+20000&&!liveJoinedIds.has(ra.id)
-       &&((state==='title'&&titleMode==='live')||(state==='results'&&liveActive))) startLiveRace({id:ra.id,at:ra.at,c:typeof ra.c==='string'?ra.c:'hump'});
+       &&((state==='title'&&titleMode==='live')||(state==='results'&&liveActive))) startLiveRace({id:ra.id,at:ra.at,c:typeof ra.c==='string'?ra.c:'hump',k:ra.k==='cb'?'cb':'race',n:clamp(ra.n|0,0,CB_MAX),d:clamp(ra.d|0,0,2)});
+    cbIngest(rp,p,now);
     liveDirty++;
 }
 function pruneRemotes(now){ for(const [k,rp] of remotes) if(now-rp.heard>8000){ if(rp.mesh) disposeRemote(rp.mesh); remotes.delete(k); liveDirty++; } }
@@ -677,7 +680,7 @@ function livePose(rp,now){
 function updateRemotes(dt){
   const now=Date.now();
   for(const rp of remotes.values()){
-    const on=sharesMyWorld(rp)&&livePose(rp,now);
+    const on=sharesMyWorld(rp)&&livePose(rp,now)&&!(cbActive&&rp.p.cbs&&rp.p.cbs.dn===1);   // co-op combat: hidden while their wreck burns
     if(!on){ if(rp.mesh) rp.mesh.root.visible=false; continue; }
     const m=ensureMesh(rp); m.root.visible=true; m.root.position.set(rp.x,rp.y,rp.z); m.body.quaternion.copy(_q1); m.prop.rotation.x+=dt*(30+70*(rp.thr||.5));
     if(liveActive&&liveRace){ const pr=rp.p.pr; const s=liveSeen[rp.peer]||(liveSeen[rp.peer]={});
@@ -699,7 +702,8 @@ function liveTick(){
   const pt={ v:1, m, uid:myId||null, rid:liveActive&&liveRace?liveRace.id:null,
     s: flying?[r2(player.x),r2(player.y),r2(player.z),r4(q.x),r4(q.y),r4(q.z),r4(q.w),r2(player.spd),r2(player.thr)]:null,
     pr: liveActive?[player.passed, player.finish==null?null:Math.round(player.finish*1000)/1000]:null,
-    ra: liveRace&&liveRace.host&&liveRace.at>now-3000?{id:liveRace.id,at:liveRace.at,c:liveRace.c}:null, c:cid() };
+    ra: liveRace&&liveRace.host&&liveRace.at>now-3000?{id:liveRace.id,at:liveRace.at,c:liveRace.c,k:liveRace.k||'race',n:liveRace.n||0,d:liveRace.d}:null, c:cid() };
+  if(liveActive&&cbActive) Object.assign(pt,cbStateOut());
   if(liveCanEmit&&(flying?now-liveLastEmit>=100:now-liveLastEmit>=2000)){ liveLastEmit=now;
     ROOM.emit('st',{...pt,t:now}).then(()=>{ roomDiag.stSent=(roomDiag.stSent||0)+1; }).catch(e=>{ if(e&&e.code==='not_permitted') liveCanEmit=false; roomDiag.err='st: '+((e&&e.code)||e); }); }
   const key=JSON.stringify({...pt,s:null}); if(flying?now-liveLastSend<1000/LIVE_HZ:key===liveLastSent) return;
@@ -708,17 +712,19 @@ function liveTick(){
 }
 
 // lobby → race
-function liveAnnounce(){
+function liveAnnounce(kind){
   if(!ROOM||!roomOK){ toast('👥 Not connected to the live lobby'); return; }
   const id=Math.random().toString(36).slice(2,10).replace(/[^a-z0-9]/g,'')||'r'+Date.now()%1e6;
-  startLiveRace({id,at:Date.now()+LIVE_LEAD,host:true,c:cid()});
+  const others=lobbyPilots().filter(rp=>rp.p.m==='lobby'||(rp.p.m==='results'&&liveRace&&rp.p.rid===liveRace.id)).length;   // more pilots, more bandits
+  startLiveRace({id,at:Date.now()+LIVE_LEAD,host:true,c:cid(),k:kind==='cb'?'cb':'race',n:kind==='cb'?Math.min(CB_MAX,CB_N+4*others):0,d:diff});
 }
 function startLiveRace(ra){
   liveJoinedIds.add(ra.id); liveRace=ra; liveSeen={}; titleMode='live';
   applyCourse(courseOf(ra.c));           // everyone races the host's course
   beginRace(); countdown=Math.max(.5,(ra.at-Date.now())/1000);
   liveLastSent=''; liveTick();
-  say((ra.host?'👥 RACE ANNOUNCED · everyone in the lobby joins':'👥 JOINING LIVE RACE')+' · '+COURSES[course].n.toUpperCase(),2.4,'#9fe8ff');
+  if(ra.k==='cb') say(ra.host?'⚔ CO-OP COMBAT · everyone in the lobby joins':'⚔ JOINING CO-OP COMBAT',2.4,'#9fe8ff');
+  else say((ra.host?'👥 RACE ANNOUNCED · everyone in the lobby joins':'👥 JOINING LIVE RACE')+' · '+COURSES[course].n.toUpperCase(),2.4,'#9fe8ff');
 }
 function lobbyPilots(){ const now=Date.now(); return [...remotes.values()].filter(rp=>rp.p&&rp.p.m&&now-rp.heard<6000); }
 function renderLive(el){
@@ -732,12 +738,14 @@ function renderLive(el){
     const stale=rp.buf.length&&now-rp.buf[rp.buf.length-1][0]-(rp.off||0)>3000;
     const pc=COURSES.find(C=>C.id===rp.p.c);
     line(`${remoteName(rp)} · ${where[rp.p.m]||'here'}`+(pc&&(rp.p.m==='lobby'||rp.p.m==='race'||rp.p.m==='results')?` · ${pc.n}`:'')+(hz?` · ${hz.toFixed(0)} Hz · ~${d} ms`:'')+(stale?' · (quiet)':''),{color:rp.color}); }
-  const b=document.createElement('button'); b.textContent='🏁 START LIVE RACE'; b.style.marginTop='10px'; b.onclick=()=>liveAnnounce(); el.appendChild(b);
-  line(`Starts a race on ${COURSES[course].n} for everyone in the lobby in 6 s (Enter / A works too). No AI, no pickups.`,{opacity:.6,fontSize:'11px',marginTop:'6px'});
+  const b=document.createElement('button'); b.textContent='🏁 START LIVE RACE'; b.style.marginTop='10px'; b.onclick=()=>liveAnnounce('race'); el.appendChild(b);
+  const b2=document.createElement('button'); b2.textContent='⚔ START CO-OP COMBAT'; b2.style.margin='10px 0 0 8px'; b2.onclick=()=>liveAnnounce('cb'); el.appendChild(b2);
+  const nb=Math.min(CB_MAX,CB_N+4*ps.filter(rp=>rp.p.m==='lobby').length);
+  line(`Race: ${COURSES[course].n} for everyone in the lobby in 6 s (Enter / A works too), no AI, no pickups. Co-op combat: you all take off together against ${nb} bandits (${DIFFS[diff].n}); shot down = 30 s repairs on the runway. The starter's level and browser run the bandits, so they should keep the game in view.`,{opacity:.6,fontSize:'11px',marginTop:'6px'});
   line(`diag v3 · st sent ${roomDiag.stSent||0}, heard ${roomDiag.st||0}${liveCanEmit?'':' (sending not permitted)'} · via ${roomDiag.via||'?'} · lobby lists ${roomDiag.lobby} · ${roomDiag.via||'live'} room lists ${roomDiag.named} · pings sent ${roomDiag.sent}, heard ${roomDiag.pings} from [${[...roomDiag.pingFrom].join(',')}] · connected ${LR&&LR.connected?LR.connected():'?'} · peer updates ${roomDiag.n}`+(roomDiag.last?` (last ${((now-roomDiag.last)/1000).toFixed(0)} s ago)`:'')+` · ${roomDiag.list.length} in room: ${roomDiag.list.join(' | ')}`+(roomDiag.err?` · ERR ${roomDiag.err}`:''),{opacity:.5,fontSize:'10px',marginTop:'6px',fontFamily:'monospace',wordBreak:'break-all'});
 }
 function showLiveResults(){
-  state='results';
+  state='results'; resHead(['POS','PILOT','TIME','BEST LAP']); $('bAgain').textContent='RACE AGAIN'; $('resHint').textContent='Enter / A to race again · F / X for free flight · Esc / B for menu';
   const rows=[{name:'You',color:player.color,finish:player.finish,me:true,prog:progress(player),lap:player.laps.length?Math.min(...player.laps):null},
     ...Object.values(liveSeen).map(s=>({name:s.name,color:s.color,finish:isNum(s.finish)?s.finish:null,prog:remoteProgress(s),passed:s.passed|0}))]
     .sort((a,b)=>b.prog-a.prog);
@@ -754,7 +762,7 @@ function showLiveResults(){
 let liveResT=0;
 function liveFrame(dt){
   liveTick(); updateRemotes(dt); pruneRemotes(Date.now());
-  if(state==='results'&&liveActive){ liveResT-=dt; if(liveResT<=0&&liveDirty){ liveResT=.5; liveDirty=0; showLiveResults(); } }
+  if(state==='results'&&liveActive){ liveResT-=dt; if(liveResT<=0&&liveDirty){ liveResT=.5; liveDirty=0; if(cbActive) showCombatResults(); else showLiveResults(); } }
   if(state==='title'&&titleMode==='live'){ liveResT-=dt; if(liveResT<=0){ liveResT=liveDirty?.5:1.5; liveDirty=0; refreshTitle(); } }
 }
 function liveNote(){ if(!ROOM) return; const n=[...remotes.values()].filter(rp=>rp.mesh&&rp.mesh.root.visible).length;
@@ -764,7 +772,10 @@ function setupRace(allAI){
   const slots=[[-118,-7],[-118,7],[-134,-7],[-134,7]],   // runway start, well behind the start ring
         order=[0,1,2,3].sort(()=>Math.random()-.5);
   const hd=Math.atan2(rw.dz,rw.dx);
-  ttActive = !allAI && titleMode==='tt'; liveActive = !allAI && titleMode==='live' && !!liveRace; const solo=ttActive||liveActive;
+  ttActive = !allAI && titleMode==='tt'; liveActive = !allAI && titleMode==='live' && !!liveRace;
+  const wasCb=cbActive; cbActive = !allAI && (titleMode==='combat' || (liveActive && liveRace.k==='cb')); cbCoop = cbActive && liveActive; cbHost = !cbCoop || !!liveRace.host;
+  if(wasCb&&!cbActive) cbClear();
+  const solo=ttActive||liveActive||cbActive;
   racers = solo ? [player] : ALL_RACERS;
   ALL_RACERS.forEach((r,i)=>{
     const [f,s]=slots[order[i]], x=P2[0][0]+rw.dx*f+rw.px*s, z=P2[0][1]+rw.dz*f+rw.pz*s;
@@ -779,19 +790,20 @@ function setupRace(allAI){
   ALL_RACERS.forEach(r=>{ r.root.visible = !solo || r===player; });
   if(solo){ const f=ttActive?-118:(Math.random()<.5?-118:-134), sd=ttActive?0:[-9,-3,3,9][Math.random()*4|0]; player.x=P2[0][0]+rw.dx*f+rw.px*sd; player.z=P2[0][1]+rw.dz*f+rw.pz*sd; }
   rec=null; split.t=0; pickGhosts();
+  if(cbActive) cbSetup();
 }
 
 // ================= INPUT =================
 const keys={}, touch={up:false,down:false,brake:false}, stick={id:null,ox:0,oy:0,x:0,y:0};
 function keyAction(c){ return ({Enter:'confirm',Space:'confirm',NumpadEnter:'confirm',Escape:'pause',KeyP:'pause',KeyQ:'back',Backspace:'back',
-  ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'up',ArrowDown:'down',KeyM:'mute',KeyF:'free',KeyR:'reset'})[c]; }
+  ArrowLeft:'left',KeyA:'left',ArrowRight:'right',KeyD:'right',ArrowUp:'up',ArrowDown:'down',KeyM:'mute',KeyF:'free',KeyR:'reset',KeyX:'missile'})[c]; }
 addEventListener('keydown',e=>{ if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space'].includes(e.code)) e.preventDefault(); initAudio();
   if(!keys[e.code]){ const a=keyAction(e.code); if(a) onAction(a); } keys[e.code]=true; });
 addEventListener('keyup',e=>{ keys[e.code]=false; });
 addEventListener('blur',()=>{ for(const k in keys) keys[k]=false; });
 const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints>0;
 document.querySelectorAll('.tb').forEach(el=>{ const k=el.dataset.k;
-  const on=e=>{ e.preventDefault(); e.stopPropagation(); touch[k]=true; el.classList.add('down'); initAudio(); if(k==='use') onAction('fire'); };
+  const on=e=>{ e.preventDefault(); e.stopPropagation(); touch[k]=true; el.classList.add('down'); initAudio(); if(k==='use') onAction('fire'); if(k==='msl') onAction('missile'); };
   const off=e=>{ e.preventDefault(); touch[k]=false; el.classList.remove('down'); };
   el.addEventListener('pointerdown',on); ['pointerup','pointercancel','pointerleave'].forEach(t=>el.addEventListener(t,off)); });
 canvas.addEventListener('pointerdown',e=>{ initAudio(); if(state==='free'&&player.crashed>0){ respawn(player,true); return; } if((state==='race'||state==='countdown')&&e.clientX<VW*.6&&stick.id===null){ stick.id=e.pointerId; stick.ox=e.clientX; stick.oy=e.clientY; stick.x=0; stick.y=0; } });
@@ -836,7 +848,7 @@ function pollPad(){
   const edge=k=>now[k]&&!padPrev[k];
   if(edge('x')) onAction(state==='results'?'free':'reset'); if(edge('sel')) onAction('reset');
   // pickups: either shoulder button (A is for menus / respawn only)
-  if(edge('lb')||edge('rb')) onAction('fire');
+  if(cbActive){ if(edge('lb')) onAction('missile'); if(edge('rb')) onAction('fire'); } else if(edge('lb')||edge('rb')) onAction('fire');
   if(edge('a')&&state!=='race') onAction('confirm'); if(edge('b')) onAction('back'); if(edge('st')) onAction('pause'); if(edge('y')) onAction('mute');
   if(edge('dl')||edge('sl')) onAction('left'); if(edge('dr')||edge('sr')) onAction('right');
   if(edge('du')||edge('su')) onAction('up'); if(edge('dd')||edge('sd')) onAction('down');
@@ -897,13 +909,15 @@ function setMute(m){ muted=m; $('bMute').textContent=muted?'🔇':'🔊'; toast(
 // ================= STATES =================
 const show=(id,on)=>$(id).classList.toggle('hidden',!on);
 function goTitle(){ state='title'; setupRace(true); show('title',1); show('pause',0); show('results',0); show('hudBtns',0); show('touch',0); refreshTitle(); }
-function startRace(){ if(titleMode==='live'){ liveAnnounce(); return; } beginRace(); }
+function startRace(){ if(titleMode==='live'){ liveAnnounce(state==='results'&&liveRace&&liveRace.k==='cb'?'cb':'race'); return; } beginRace(); }
 function beginRace(){ initAudio(); setupRace(false); state='countdown'; countdown=3.999;
-  show('title',0); show('pause',0); show('results',0); show('hudBtns',1); show('touch',isTouch); document.querySelector('.tb.use').style.display=''; $('brakeBtn').style.display='none';
+  show('title',0); show('pause',0); show('results',0); show('hudBtns',1); show('touch',isTouch); document.querySelector('.tb.use').style.display=''; $('brakeBtn').style.display='none'; $('mslBtn').style.display=cbActive?'':'none';
   savePrefs(); }
 function savePrefs(){ try{ localStorage.setItem('ulr3-diff',diff); localStorage.setItem('ulr3-pitch',invert?'dive':'climb'); localStorage.setItem('ulr3-sticks',swapSticks?'1':'0'); localStorage.setItem('ulr3-mode',titleMode==='live'?'race':titleMode); localStorage.setItem('ulr3-course',COURSES[course].id); }catch(e){} }
-function pauseGame(){ if(state!=='race'&&state!=='countdown'&&state!=='free') return; prevState=state; state='paused'; show('pause',1); $('freeHint').style.display=prevState==='free'?'block':'none'; }
-function resume(){ if(state!=='paused') return; state=prevState; show('pause',0); }
+function pauseGame(){ if(state!=='race'&&state!=='countdown'&&state!=='free') return;
+  if(cbActive&&cbCoop){ cbMenu=true; show('pause',1); $('freeHint').style.display='none'; return; }   // co-op: the fight (and the host's enemies) can't stop
+  prevState=state; state='paused'; show('pause',1); $('freeHint').style.display=prevState==='free'?'block':'none'; }
+function resume(){ if(cbMenu){ cbMenu=false; show('pause',0); return; } if(state!=='paused') return; state=prevState; show('pause',0); }
 let titleRow=0;
 function onAction(a){
   if(a==='mute'){ setMute(!muted); return; }
@@ -911,8 +925,11 @@ function onAction(a){
     if(a==='confirm') titleMode==='free' ? startFree(true) : startRace();
     else if(a==='free'){ titleMode='free'; startFree(true); }
     else if(a==='up'||a==='down'){ titleRow=(titleRow+(a==='up'?4:1))%5; refreshTitle(); beep(400,.04); }
-    else if(a==='left'||a==='right'){ if(titleRow===0){ const M=['race','tt',...(ROOM&&roomOK?['live']:[]),'free']; titleMode=M[(Math.max(0,M.indexOf(titleMode))+(a==='left'?M.length-1:1))%M.length]; } else if(titleRow===1){ if(applyCourse((course+(a==='left'?COURSES.length-1:1))%COURSES.length)) setupRace(true); savePrefs(); } else if(titleRow===2) diff=(diff+(a==='left'?2:1))%3; else if(titleRow===3) invert=!invert; else swapSticks=!swapSticks; refreshTitle(); beep(520,.05); }
-  } else if(state==='race'||state==='countdown'){ if(a==='pause') pauseGame(); else if((a==='confirm'||a==='fire')&&state==='race'&&!player.auto) useItem(player); }
+    else if(a==='left'||a==='right'){ if(titleRow===0){ const M=['race','tt','combat',...(ROOM&&roomOK?['live']:[]),'free']; titleMode=M[(Math.max(0,M.indexOf(titleMode))+(a==='left'?M.length-1:1))%M.length]; } else if(titleRow===1){ if(applyCourse((course+(a==='left'?COURSES.length-1:1))%COURSES.length)) setupRace(true); savePrefs(); } else if(titleRow===2) diff=(diff+(a==='left'?2:1))%3; else if(titleRow===3) invert=!invert; else swapSticks=!swapSticks; refreshTitle(); beep(520,.05); }
+  } else if(cbMenu){ if(a==='pause'||a==='confirm') resume(); else if(a==='back'){ cbMenu=false; goTitle(); } }
+  else if(state==='race'||state==='countdown'){ if(a==='pause') pauseGame();
+    else if(cbActive){ if(a==='missile') cbFireMissile(); }                       // guns: held button, polled in cbUpdate
+    else if((a==='confirm'||a==='fire')&&state==='race'&&!player.auto) useItem(player); }
   else if(state==='paused'){ if(a==='pause'||a==='confirm') resume(); else if(a==='back') goTitle(); }
   else if(state==='results'){ if(a==='confirm') startRace(); else if(a==='free') startFree(); else if(a==='back'||a==='pause') goTitle(); }
   else if(state==='free'){ if(a==='pause') pauseGame(); else if(a==='reset') respawn(player,true); else if(a==='confirm'&&player.crashed>0) respawn(player,true); }
@@ -927,10 +944,10 @@ function refreshTitle(){
   const rows=[$('modeRow'),...document.querySelectorAll('.opt')];
   rows.forEach((el,i)=>{ el.style.outline=(padId&&i===titleRow)?'1px solid rgba(255,211,77,.5)':'none'; el.style.borderRadius='10px'; });
   $('modeRow').style.padding='6px';
-  $('bRace').classList.toggle('alt',titleMode!=='race'); $('bTT').classList.toggle('alt',titleMode!=='tt'); $('bLive').classList.toggle('alt',titleMode!=='live'); $('bLive').style.display=ROOM?'':'none'; $('bFreeT').classList.toggle('alt',titleMode!=='free');
-  $('modeDesc').textContent = titleMode==='race' ? '3 laps against 3 rival pilots · pickups · engine heat' : titleMode==='tt' ? 'One-lap runs, back to the runway after each · race your best ghost'+(DB?' and friends’ fastest runs':'')+' · no pickups' : titleMode==='live' ? '👥 Race the friends who have the game open right now' : 'Take off from the runway and fly anywhere · land in any field · watch your engine temp';
+  $('bRace').classList.toggle('alt',titleMode!=='race'); $('bTT').classList.toggle('alt',titleMode!=='tt'); $('bCombat').classList.toggle('alt',titleMode!=='combat'); $('bLive').classList.toggle('alt',titleMode!=='live'); $('bLive').style.display=ROOM?'':'none'; $('bFreeT').classList.toggle('alt',titleMode!=='free');
+  $('modeDesc').textContent = titleMode==='race' ? '3 laps against 3 rival pilots · pickups · engine heat' : titleMode==='tt' ? 'One-lap runs, back to the runway after each · race your best ghost'+(DB?' and friends’ fastest runs':'')+' · no pickups' : titleMode==='live' ? '👥 Race or fight alongside the friends who have the game open right now' : titleMode==='combat' ? `Dogfight: take off and shoot down all ${CB_N} enemy planes · ? boxes give 150 rounds or 4 missiles · shot down = game over` : 'Take off from the runway and fly anywhere · land in any field · watch your engine temp';
   document.querySelectorAll('.opt').forEach(el=>{ el.style.borderRadius='10px'; el.style.padding='2px 6px'; });
-  const b=loadBest()[bestKey()]; $('bestLine').textContent=b&&titleMode==='race'?`Your best on ${COURSES[course].n} · ${DIFFS[diff].n}: race ${fmt(b.race)} · lap ${fmt(b.lap)}`:'';
+  const b=loadBest()[bestKey()]; const cbb=loadBest()[cbBestKey()]; $('bestLine').textContent=b&&titleMode==='race'?`Your best on ${COURSES[course].n} · ${DIFFS[diff].n}: race ${fmt(b.race)} · lap ${fmt(b.lap)}`:titleMode==='combat'?(cbb&&cbb.cb?`Fastest victory · ${DIFFS[diff].n}: ${fmt(cbb.cb)}`:`Level ${DIFFS[diff].n} sets how well the bandits fly and shoot`):'';
   $('cName').textContent=COURSES[course].n; $('cTag').textContent=COURSES[course].tag; renderBoard($('ttBoard'));
 }
 $('cL').onclick=()=>{titleRow=1;onAction('left');}; $('cR').onclick=()=>{titleRow=1;onAction('right');};
@@ -940,8 +957,9 @@ $('sL').onclick=$('sR').onclick=()=>{titleRow=4;onAction('right');};
 $('bRace').onclick=()=>{ titleMode='race'; startRace(); };
 $('bFreeT').onclick=()=>{ titleMode='free'; startFree(true); };
 $('bTT').onclick=()=>{ titleMode='tt'; startRace(); };
+$('bCombat').onclick=()=>{ titleMode='combat'; startRace(); };
 $('bLive').onclick=()=>{ titleMode='live'; liveDirty++; refreshTitle(); };
-$('bResume').onclick=resume; $('bQuit').onclick=goTitle; $('bAgain').onclick=startRace; $('bFree').onclick=()=>startFree(false); $('bMenu').onclick=goTitle;
+$('bResume').onclick=resume; $('bQuit').onclick=()=>{ cbMenu=false; goTitle(); }; $('bAgain').onclick=startRace; $('bFree').onclick=()=>startFree(false); $('bMenu').onclick=goTitle;
 $('bPause').onclick=()=>{ state==='paused'?resume():pauseGame(); }; $('bMute').onclick=()=>setMute(!muted);
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) pauseGame(); });
 const say=(text,dur,color)=>{ msg={text,t:dur||1.6,color:color||'#ffd34d'}; };
@@ -1047,15 +1065,16 @@ function physics(r,dt){
   const gy=ground(r.x,r.z)+1.0;
   if(r.gnd && r.y>gy && r.y-gy<1.3 && r.pitch<=.05) r.y=gy;          // wheels follow the terrain while rolling
   if(r.y<gy){ const vs=(r.y-py)/dt; r.y=gy; const wasGnd=r.gnd; r.gnd=true;
-    if(freeMe(r)){ if(!wasGnd) touchdown(r,vs); }
+    if(freeMe(r)||cbPl(r)){ if(!wasGnd) touchdown(r,vs); }
     else if(r.air>.6&&vs<-4){ r.spd*=.6; r.pitch=.15; if(r===player&&!r.auto){ rumble(.8,.5,250); beep(90,.3,'square',.12); say('TOO LOW!',1,'#ff7a5a'); } }
     r.bank=0; if(r.pitch<0) r.pitch=0; }
   else if(r.y>gy+1.3) r.gnd=false;
-  if(freeMe(r)&&!r.crashed){ const hit=sceneryHit(r.x,r.y,r.z); if(hit) crash(r,hit); }
+  if((freeMe(r)||cbPl(r))&&!r.crashed){ const hit=sceneryHit(r.x,r.y,r.z); if(hit) crash(r,hit); }
   if(r.brake&&r.gnd&&r.spd>0){ r.spd=Math.max(0,r.spd-6.5*dt);       // wheel brakes (B)
     if(r.spd>6&&Math.random()<.5){ const f=fwd(r); for(const sd of [-1,1]) puff(r.x-f[0]*.1-Math.sin(r.hd)*sd*.85,r.y-1.3,r.z-f[2]*.1+Math.cos(r.hd)*sd*.85,'smoke',.35+Math.random()*.2,.5,0,.6,0); } }
   if(r.y>260){ r.y=260; if(r.pitch>0) r.pitch=0; }
   ensureAtt(r);
+  if(!cbActive){
   // ring pass (segment crosses ring plane inside the hole)
   const g=rings[r.passed%N];
   const s0=(px-g.x)*g.nx+(pz-g.z)*g.nz, s1=(r.x-g.x)*g.nx+(r.z-g.z)*g.nz;
@@ -1069,6 +1088,7 @@ function physics(r,dt){
     const ex=rx/rl*(rl-RR), ey=vy/rl*(rl-RR), ez=rz/rl*(rl-RR), dx=ex+a*q.nx, dz=ez+a*q.nz, dd=Math.hypot(dx,ey,dz);
     if(dd<1.7&&dd>0){ const k=(1.7-dd)/dd; r.x+=dx*k; r.y+=ey*k; r.z+=dz*k; if(r.bonkT>0) continue; r.bonkT=.8; r.spd*=.6; r.hd+=(Math.random()-.5)*.5;
       if(r===player&&!r.auto){ rumble(.9,.6,260); beep(140,.25,'square',.12); say('BONK!',.9,'#ff7a5a'); } } }
+  }
   // world bounds
   const BX=440, BZ=300;
   if(Math.abs(r.x)>BX){ r.x=Math.sign(r.x)*BX; r.hd=wrap(Math.PI-r.hd); r.spd*=.85; }
@@ -1109,7 +1129,7 @@ function finishOthers(){ let guard=0; const dt=1/30, saved=simT;
 function showResults(){
   if(ttActive){ ttNextRun(); return; }
   if(liveActive){ showLiveResults(); return; }
-  finishOthers(); state='results';
+  finishOthers(); state='results'; resHead(['POS','PILOT','TIME','BEST LAP']); $('bAgain').textContent='RACE AGAIN'; $('resHint').textContent='Enter / A to race again · F / X for free flight · Esc / B for menu';
   const st=racers.slice().sort((a,b)=>(a.finish??1e9)-(b.finish??1e9)), pos=st.indexOf(player)+1;
   $('resTitle').textContent=pos===1?'VICTORY!':'YOU FINISHED '+ord(pos).toUpperCase();
   $('resBody').innerHTML=st.map((r,i)=>`<tr class="${r===player?'me':''}"><td>${ord(i+1)}</td><td><span class="dot" style="background:${r.color}"></span>${r.name}</td><td>${fmt(r.finish)}</td><td>${fmt(r.laps.length?Math.min(...r.laps):null)}</td></tr>`).join('');
@@ -1171,15 +1191,17 @@ function rollItem(r){ const pos=standings().indexOf(r)+1;
   const w = pos===1 ? {boost:2,missile:1,bullets:3,mine:4} : pos===racers.length ? {boost:4,missile:4,bullets:2,mine:1} : {boost:3,missile:3,bullets:3,mine:2};
   let s=Math.random()*Object.values(w).reduce((a,b)=>a+b); for(const k in w){ s-=w[k]; if(s<=0) return k; } return 'boost'; }
 function updateBoxes(dt,t){
-  if(isFree()||ttActive||liveActive){ for(const b of boxes) b.m.visible=false; return; }
+  if(!cbActive&&(isFree()||ttActive||liveActive)){ for(const b of boxes) b.m.visible=false; return; }
   for(const b of boxes){
     if(!b.active){ b.t-=dt; if(b.t<=0){ b.active=true; b.m.visible=true; b.m.scale.setScalar(.01); } continue; }
     b.m.visible=true; const sc=Math.min(1,b.m.scale.x+dt*3); b.m.scale.setScalar(sc);
     b.m.rotation.set(t*.7+b.ph,t*1.1+b.ph,0); b.m.position.y=b.y+Math.sin(t*2+b.ph)*.6;
     if(state==='countdown') continue;
     for(const r of racers){ if(r.finish!=null&&!r.ai) continue;
-      if(Math.hypot(r.x-b.x,r.y-b.m.position.y,r.z-b.z)<3.8){ b.active=false; b.t=5; b.m.visible=false;
+      if(cbActive&&(r!==player||!cbMe.alive||r.crashed>0)) continue;
+      if(Math.hypot(r.x-b.x,r.y-b.m.position.y,r.z-b.z)<3.8){ b.active=false; b.t=cbActive?10:5; b.m.visible=false;
         for(let i=0;i<10;i++){ const a=Math.random()*6.28, v=6*Math.random()+2; puff(b.x,b.m.position.y,b.z,i%2?'pink':'spark',.6,.5,Math.cos(a)*v,(Math.random()-.3)*v,Math.sin(a)*v); }
+        if(cbActive){ cbPickup(); break; }
         if(!r.item){ r.item=rollItem(r); r.itemHold=0; r.react=.6+Math.random()*2+(diff===0?1.5:0);
           if(meRace(r)){ beep(660,.06,'triangle',.12); setTimeout(()=>beep(990,.06,'triangle',.12),60); setTimeout(()=>beep(1320,.1,'triangle',.12),120); rumble(.1,.3,80); say(ITEMS[r.item].icon+' '+ITEMS[r.item].name,1.2,'#ffb3e0'); } }
         break; } } }
@@ -1362,7 +1384,8 @@ function realisticFlight(r,dt,onGround,effThr,rud){
   let p;
   if(me){ p = r.steer*ROLL_MAX*auth;
     if(Math.abs(r.steer)<.08 && Math.abs(r.bank)<1.22) p -= .55*Math.sin(r.bank);   // a touch of dihedral
-  } else p = clamp((r.steer*r.air*(r.phi||PHI_MAX) - r.bank)*AI_ROLLK, -ROLL_MAX, ROLL_MAX)*auth;
+  } else if(r.team==='foe'||r.cbBot) p = clamp(r.rollCmd||0,-ROLL_MAX,ROLL_MAX)*auth;      // combat pilots (cbSteer) command roll rate
+  else p = clamp((r.steer*r.air*(r.phi||PHI_MAX) - r.bank)*AI_ROLLK, -ROLL_MAX, ROLL_MAX)*auth;
   p += rud*.25;                                                   // rudder rolls a little too
   const ra=p*dt, rc=Math.cos(ra), rs=Math.sin(ra), fu=vcross(f,u);
   u[0]=u[0]*rc+fu[0]*rs; u[1]=u[1]*rc+fu[1]*rs; u[2]=u[2]*rc+fu[2]*rs;
@@ -1384,12 +1407,13 @@ function stallCues(p,t,y){
 let free={landings:0,best:null,crashes:0,lowT:0,lowCool:0}, snapCam=false;
 const isFree = () => state==='free' || (state==='paused'&&prevState==='free');
 const freeMe = r => r===player && state==='free';
+const cbPl = r => r===player && cbActive && (state==='race'||state==='countdown');
 const debris=[]; const debGeo=new THREE.BoxGeometry(.7,.25,.9);
 function clearDebris(){ for(const d of debris) scene.remove(d.m); debris.length=0; }
 function startFree(fromTitle){
   initAudio();
   if(fromTitle){ setupRace(false); savePrefs(); show('title',0); show('pause',0); respawn(player,true); }
-  state='free'; ttActive=false; liveActive=false; clearGhosts(); clearProjectiles(); clearDebris();
+  state='free'; ttActive=false; liveActive=false; if(cbActive) cbClear(); clearGhosts(); clearProjectiles(); clearDebris(); $('mslBtn').style.display='none';
   show('results',0); show('hudBtns',1); show('touch',isTouch); document.querySelector('.tb.use').style.display='none'; $('brakeBtn').style.display='';
   const p=player; Object.assign(p,{auto:false,ai:false,item:null,heat:0,overT:0,slowT:0,penT:0,boostT:0,burst:0,crashed:0});
   p.root.visible=true; p.tag.visible=false;
@@ -1402,6 +1426,7 @@ function respawn(r,manual){
   say('READY FOR TAKEOFF · throttle up, then pull back',2.5,'#7dffa0');
 }
 function crash(r,reason){
+  if(cbActive&&r===player){ cbPlayerDown(reason.replace(/ · .*/,'')); return; }
   if(r.crashed>0) return; r.crashed=3.2; r.root.visible=false; free.crashes++;
   burstFx(r.x,r.y+.8,r.z,true); burstFx(r.x+1,r.y+1.5,r.z-1,true);
   const f=fwd(r), mats=[new THREE.MeshLambertMaterial({color:r.color}), new THREE.MeshLambertMaterial({color:'#f4f4f4'}), new THREE.MeshLambertMaterial({color:'#555a60'})];
@@ -1419,7 +1444,7 @@ function touchdown(r,vs){
   if(Math.abs(r.bank)>.4) return crash(r,'WINGTIP STRIKE · level the wings');
   if(r.pitch<-.2) return crash(r,'NOSE-IN · flare before touchdown');
   if(r.spd>31) return crash(r,'TOO FAST TO LAND ('+Math.round(r.spd*3.6)+' km/h)');
-  if(r.spd<4) return;  // just rolling
+  if(r.spd<4||cbActive) return;  // just rolling (combat: no landing scores)
   const u=(r.x-rw.cx)*rw.dx+(r.z-rw.cz)*rw.dz, v=(r.x-rw.cx)*rw.px+(r.z-rw.cz)*rw.pz, onRw=Math.abs(u)<rw.half&&Math.abs(v)<rw.w;
   free.landings++; if(free.best==null||vs>free.best) free.best=vs;
   const grade = vs>-1 ? ['🧈 BUTTER LANDING!','#7dffa0'] : vs>-2.2 ? ['NICE LANDING','#7dffa0'] : ['FIRM LANDING','#ffd34d'];
@@ -1440,11 +1465,14 @@ function sceneryHit(x,y,z){
 function freeFlight(dt){
   const p=player;
   if(p.crashed>0){ p.crashed-=dt; if(p.crashed<=0) respawn(p,false); }
-  for(const d of debris){ d.vy-=15*dt; d.m.position.x+=d.vx*dt; d.m.position.y+=d.vy*dt; d.m.position.z+=d.vz*dt; d.m.rotation.x+=d.sx*dt; d.m.rotation.z+=d.sz*dt;
-    const gy=ground(d.m.position.x,d.m.position.z)+.15; if(d.m.position.y<gy){ d.m.position.y=gy; d.vy*=-.25; d.vx*=.5; d.vz*=.5; d.sx*=.5; d.sz*=.5; } }
+  updateDebris(dt);
   free.lowCool-=dt;
   const agl=p.y-ground(p.x,p.z)-1;
   if(!p.crashed&&!p.gnd&&agl<4&&p.spd>24){ free.lowT+=dt; if(free.lowT>.8&&free.lowCool<=0){ free.lowCool=6; say('✨ LOW PASS! '+agl.toFixed(1)+' m',1.4,'#9fe8ff'); beep(990,.08,'triangle',.1); } } else free.lowT=0;
+}
+function updateDebris(dt){
+  for(const d of debris){ d.vy-=15*dt; d.m.position.x+=d.vx*dt; d.m.position.y+=d.vy*dt; d.m.position.z+=d.vz*dt; d.m.rotation.x+=d.sx*dt; d.m.rotation.z+=d.sz*dt;
+    const gy=ground(d.m.position.x,d.m.position.z)+.15; if(d.m.position.y<gy){ d.m.position.y=gy; d.vy*=-.25; d.vx*=.5; d.vz*=.5; d.sx*=.5; d.sz*=.5; } }
 }
 function drawFreeHUD(t){
   const p=player;
@@ -1499,6 +1527,487 @@ function drawFreeHUD(t){
   if(msg.t>0){ hx.globalAlpha=Math.min(1,msg.t*2); txt(msg.text,VW/2,VH*.28,VW<640?24:34,msg.color,'center',700); hx.globalAlpha=1; }
 }
 
+function syncMesh(r){ r.fin.rotation.y=(r.rudder||0)*.55; r.root.position.set(r.x,r.y,r.z); ensureAtt(r);
+    const f=r.f, u=r.u, z=vcross(f,u); _bm.makeBasis(_bv1.set(f[0],f[1],f[2]),_bv2.set(u[0],u[1],u[2]),_bv3.set(z[0],z[1],z[2]));
+    r.body.quaternion.setFromRotationMatrix(_bm);
+    if(!r.gnd) r.body.rotateZ(clamp(r.cDem||0,-.7,1.1)*.1);          // a hint of angle of attack under g
+    if(r.slowT>0) r.body.rotateX(Math.sin(simT*16+r.ph)*.35*Math.min(1,r.slowT)); }
+// ================= COMBAT (single player + co-op) =================
+// Dogfight mode (2026-11-07). Players take off from the runway; enemy planes are already airborne. Shoot them all down.
+// Enemies fly the same aerobatic model as everyone else: cbSteer() turns "point the nose this way" into roll rate + lift.
+// Single player: 10 enemies; too much damage and you blow up (game over). Co-op (over the live room): the host's browser
+// flies the enemies and puts their state in its 'st' messages; guests report their hits, the host sends back the damage
+// enemies do to them; shot-down pilots are repaired on the runway for 30 s. Pickups: 150 rounds or 4 lock-on missiles.
+const CB_N = 10, CB_MAX = 24, CB_REPAIR = 30, CB_HP = 100;
+const CB_START_AMMO = 200, CB_AMMO_BOX = 150, CB_AMMO_MAX = 999, CB_MSL_BOX = 4, CB_MSL_MAX = 12, CB_BURST = 8;
+const CB_BUL_SP = 115, CB_BUL_LIFE = 1.4, CB_MY_DMG = 5, CB_MSL_DMG = 100, CB_LOCK = [10, 380];
+// enemy skill per level: hp, max g, cruise throttle, aim error (rad), firing cone (deg), gap between bursts (s), rounds per
+// burst, damage per hit on you, attackers per human, reaction (s), chance to break when you're on their tail
+const CB_DIFF = [
+  { hp:40, gmax:3.4, thr:.64, aim:.075, cone:4, rof:[3.6,5.6], burst:4, dmg:2, att:1, react:1.4, brk:.15, pass:[6,10], range:160 },
+  { hp:50, gmax:4.0, thr:.68, aim:.055, cone:5, rof:[2.6,4.2], burst:5, dmg:2.5, att:2, react:1.0, brk:.3,  pass:[8,13], range:180 },
+  { hp:60, gmax:5.0, thr:.76, aim:.04,  cone:6, rof:[1.8,3.0], burst:6, dmg:3,   att:3, react:.6,  brk:.55, pass:[10,16], range:200 } ];
+const SELF = Math.random().toString(36).slice(2,10).replace(/[^a-z0-9]/g,'') || 'p'+(Date.now()%1e7);   // this tab's id in co-op
+let cbActive=false, cbHost=true, cbCoop=false, cbEngaged=false, cbEngT=0, cbEndT=-1, cbWon=false, cbDone=false, cbMenu=false, cbHostLost=false;
+let cbMe={hp:CB_HP,ammo:CB_START_AMMO,msl:0,kills:0,alive:true,wreckT:0,repairT:0,safeT:0,hitFx:0,burst:0,burstT:0,gap:0,airT:0,downs:0,firing:0,hitMark:0};
+let cbTgts=[], cbKs={}, cbOutHits=[], cbOutDm=[], cbSeen=new Set(), cbEvN=0, cbView={frames:[],n:0,host:null,ks:{},done:0,last:0}, cbN=CB_N;
+const foes=[];
+const cbDi = () => cbCoop&&liveRace&&isNum(liveRace.d) ? clamp(liveRace.d|0,0,2) : diff;   // co-op: the starter's level
+const cbD = () => CB_DIFF[cbDi()];
+const foeMesh = () => { const m=makePlane('#40444c','#ff4040'); m.root.visible=false; return m; };
+const rnd = (a,b) => a+Math.random()*(b-a);
+const r1 = x => Math.round(x*10)/10, r3 = x => Math.round(x*1000)/1000;
+function cbFoe(i){ let r=foes[i]; if(!r){ r={...foeMesh(), name:'Bandit '+(i+1), color:'#ff4040', idx:i, team:'foe'}; foes.push(r); } return r; }
+function cbClear(){ cbActive=false; cbMenu=false; for(const r of foes) r.root.visible=false; cbClearShots(); show('pause',0); }
+
+// --- round setup ---
+function cbSetup(){
+  const D=cbD(); cbN = cbCoop ? clamp((liveRace&&liveRace.n)|0||CB_N, CB_N, CB_MAX) : CB_N;
+  cbEngaged=false; cbEngT=0; cbEndT=-1; cbWon=false; cbDone=false; cbMenu=false; cbHostLost=false;
+  cbMe={hp:CB_HP,ammo:CB_START_AMMO,msl:0,kills:0,alive:true,wreckT:0,repairT:0,safeT:0,hitFx:0,burst:0,burstT:0,gap:0,airT:0,downs:0,firing:0,hitMark:0};
+  cbKs={}; cbOutHits=[]; cbOutDm=[]; cbSeen=new Set(); cbView={frames:[],n:0,host:null,ks:{},done:0,last:Date.now()};
+  cbClearShots(); player.tag.visible=false;
+  for(let i=0;i<CB_MAX;i++){ if(i<cbN) cbFoe(i); if(foes[i]) foes[i].root.visible=false; }
+  if(!cbHost) return;                 // guests draw the host's enemies (cbViewFrame)
+  // already airborne, spread over the valley, well clear of the runway
+  for(let i=0;i<cbN;i++){ const r=cbFoe(i); let x,z,k=0;
+    do{ x=rnd(-320,320); z=rnd(-210,210); k++; } while(k<60 && (Math.hypot(x-P2[0][0],z-P2[0][1])<230 || foes.slice(0,i).some(o=>Math.hypot(o.x-x,o.z-z)<45)));
+    const y=Math.max(ground(x,z)+55, 70)+rnd(0,45);
+    Object.assign(r,{ ai:true, auto:false, x, y, z, hd:rnd(-Math.PI,Math.PI), pitch:0, bank:0, spd:30, thr:D.thr, pcmd:0, steer:0, rudder:0, brake:false,
+      air:1, gnd:false, f:null, stalled:false, spin:0, vStall:12, heat:0, overT:0, slowT:0, penT:0, boostT:0, bonkT:0, ph:Math.random()*10, passed:0, finish:null,
+      hp:D.hp, st:0, rest:0, mode:'patrol', tgt:null, wp:null, thinkT:Math.random(), fireT:rnd(1,3), burst:0, burstT:0, modeT:0, side:1, fallT:0, killer:null, cAI:.25, rollCmd:0, firing:0, fxT:0 });
+    setAtt(r); r.root.visible=true; }
+}
+function cbGo(){ say(cbCoop?`⚔ ${cbN} BANDITS UP · TAKE OFF AND FIGHT TOGETHER`:`⚔ ${cbN} BANDITS IN THE AIR · TAKE OFF!`,2.6,'#ff9a7a'); }
+const cbAlive = () => cbHost ? foes.slice(0,cbN).filter(r=>r.st===0).length : cbViewAlive();
+
+// --- who the enemies can shoot at (host): me plus the co-op pilots I can see ---
+function cbBuildTargets(){
+  const L=[];
+  if(cbMe.alive&&!player.crashed&&cbMe.repairT<=0){ const f=fwd(player);
+    L.push({id:SELF, me:true, x:player.x, y:player.y, z:player.z, vx:f[0]*player.spd, vy:f[1]*player.spd, vz:f[2]*player.spd, gnd:player.gnd||player.air<.5, safe:cbMe.safeT>0, f}); }
+  if(cbCoop) for(const rp of remotes.values()){ const s=rp.p&&rp.p.cbs;
+    if(!s||typeof s.me!=='string'||!liveRace||rp.p.rid!==liveRace.id||s.dn||!rp.mesh||!rp.mesh.root.visible) continue;
+    const q=rp.mesh.body.quaternion; v3.set(1,0,0).applyQuaternion(q); const sp=(rp.buf.length&&isNum(rp.buf[rp.buf.length-1][8]))?rp.buf[rp.buf.length-1][8]:30;
+    L.push({id:s.me, rp, x:rp.x, y:rp.y, z:rp.z, vx:v3.x*sp, vy:v3.y*sp, vz:v3.z*sp, gnd:!!s.g, safe:!!s.sf, f:[v3.x,v3.y,v3.z]}); }
+  cbTgts=L;
+}
+
+// --- flying: point the nose along dir (unit vector) with at most gmax g ---
+function cbSteer(r,dir,gmax,thr){
+  ensureAtt(r); const f=r.f, u=r.u, V=Math.max(r.spd,8), q=(V/VSTALL)**2;
+  const c=clamp(vdot(f,dir),-1,1), ang=Math.acos(c);
+  let e=[dir[0]-c*f[0],dir[1]-c*f[1],dir[2]-c*f[2]]; const el=Math.hypot(e[0],e[1],e[2]);
+  if(el<1e-5) e=[u[0],u[1],u[2]]; else { e[0]/=el; e[1]/=el; e[2]/=el; }
+  const nAv=Math.min(gmax,.88*q), w=Math.min(ang*2.2, nAv*9.8/V);
+  const gf=-9.8*f[1], L=[e[0]*V*w+gf*f[0], e[1]*V*w+9.8+gf*f[1], e[2]*V*w+gf*f[2]];      // turn accel minus the part of gravity across the path
+  const Ll=Math.hypot(L[0],L[1],L[2]); let err=0;
+  if(Ll>.4){ const ud=[L[0]/Ll,L[1]/Ll,L[2]/Ll]; err=Math.atan2(vdot(vcross(u,ud),f),vdot(u,ud)); }
+  r.rollCmd=clamp(err*4,-ROLL_MAX,ROLL_MAX);
+  const n=Math.min(Ll/9.8,nAv)*clamp(Math.cos(err),.12,1);                                   // roll first, then pull
+  r.cAI=clamp(n/q,-.3,.92); r.thr=thr; r.steer=0; r.rudder=0; r.pcmd=0;
+  if(r.stalled){ r.pcmd=-.4; r.thr=Math.max(thr,.84); r.cAI=null; }
+}
+// keep out of the ground, the walls and the ceiling
+function cbSafeDir(r,dir){
+  const f=r.f, V=r.spd, la=Math.max(2.5,V*.09), px=r.x+f[0]*V*la, pz=r.z+f[2]*V*la, py=r.y+f[1]*V*la;
+  const agl=r.y-Math.max(ground(r.x,r.z),WATER_Y), aheadGap=py-Math.max(ground(px,pz),WATER_Y), sink=agl+Math.min(0,f[1]*V)*(f[1]<-.3?4.5:3);   // where we'll be if we keep diving
+  let d=dir;
+  if(agl<28||aheadGap<30||sink<35){ const k=clamp((36-Math.min(agl,aheadGap,sink))/20,.3,1); d=vnorm([d[0]*(1-k)+f[0]*.4*k, d[1]*(1-k)+k, d[2]*(1-k)+f[2]*.4*k]); }
+  if(r.y>215) d=vnorm([d[0],Math.min(d[1],-.25),d[2]]);
+  const ox=Math.abs(r.x)>320?-Math.sign(r.x):0, oz=Math.abs(r.z)>215?-Math.sign(r.z):0;
+  if(ox||oz) d=vnorm([d[0]+ox*1.2,d[1],d[2]+oz*1.2]);
+  if(V<VSTALL*1.45&&d[1]>0) d=vnorm([d[0],d[1]*.3-.15,d[2]]);                                 // slow: nose down for speed
+  return d;
+}
+function cbLead(r,t,sp){ const dx=t.x-r.x, dy=t.y+.8-r.y, dz=t.z-r.z, d=Math.hypot(dx,dy,dz), tl=d/(sp+r.spd*.5);
+  const lx=dx+t.vx*tl, ly=dy+t.vy*tl, lz=dz+t.vz*tl, l=Math.hypot(lx,ly,lz)||1; return { d, dir:[lx/l,ly/l,lz/l] }; }
+
+// --- enemy pilot (host) ---
+function cbAI(r,dt){
+  const D=cbD();
+  if(r.st===1){ r.fallT+=dt; r.thr=0; r.cAI=.12; r.rollCmd=1.7*r.side; r.pcmd=-.2; r.steer=0; r.rudder=0;
+    r.fxT-=dt; if(r.fxT<=0){ r.fxT=.04; const f=fwd(r); puff(r.x-f[0]*2,r.y+.8,r.z-f[2]*2,Math.random()<.45?'fire':'dark',.9+Math.random()*.6,1.1,0,1,0); }
+    return; }
+  ensureAtt(r); r.thinkT-=dt; r.modeT-=dt; r.fireT-=dt;
+  const T=cbTgts.filter(t=>!t.gnd&&!t.safe);
+  if(r.thinkT<=0){ r.thinkT=D.react*rnd(.7,1.3);
+    if(!cbEngaged||!T.length){ if(r.mode==='attack') r.mode='patrol'; r.tgt=null; }
+    else {
+      // a pilot on my tail? break (Hard pilots nearly always notice)
+      const threat=T.find(t=>{ const dx=r.x-t.x, dy=r.y-t.y, dz=r.z-t.z, d=Math.hypot(dx,dy,dz); return d<240&&d>8&&(dx*t.f[0]+dy*t.f[1]+dz*t.f[2])/d>.95&&(dx*r.f[0]+dy*r.f[1]+dz*r.f[2])/d>.3; });
+      const msl=cbMissiles.some(m=>m.target===r&&Math.hypot(m.x-r.x,m.y-r.y,m.z-r.z)<320);
+      if((threat||msl)&&r.mode!=='break'&&Math.random()<(msl?Math.min(1,D.brk+.15):D.brk)){ r.mode='break'; r.modeT=rnd(1.6,2.8); r.side=Math.random()<.5?-1:1; }
+      else if(r.mode==='patrol'&&(r.rest-=D.react)<=0){ const busy=foes.slice(0,cbN).filter(o=>o.st===0&&o.mode==='attack');
+        if(busy.length<D.att*T.length){ const cnt=t=>busy.filter(o=>o.tgt===t.id).length;
+          const t=T.slice().sort((a,b)=>cnt(a)-cnt(b)||Math.hypot(a.x-r.x,a.z-r.z)-Math.hypot(b.x-r.x,b.z-r.z))[0];
+          r.mode='attack'; r.tgt=t.id; r.modeT=rnd(...D.pass); r.rest=0; } }
+      else if(r.mode==='attack'&&r.modeT<=0){ r.mode='patrol'; r.modeT=0;                 // one firing pass, then pull off and let someone else have a go
+        const h=T.find(x=>x.id===r.tgt)||T[0], a=Math.atan2(r.z-h.z,r.x-h.x)+rnd(-.6,.6), x=clamp(h.x+Math.cos(a)*280,-300,300), z=clamp(h.z+Math.sin(a)*280,-200,200);
+        r.wp=[x,Math.max(ground(x,z)+50,h.y+rnd(10,50)),z]; r.tgt=null; r.rest=rnd(4,9); }
+    }
+  }
+  if((r.mode==='break'||r.mode==='extend')&&r.modeT<=0) r.mode=r.tgt&&cbEngaged?'attack':'patrol';
+  let dir, thr=D.thr, fire=false;
+  const t=r.tgt?T.find(x=>x.id===r.tgt):null;
+  if(r.mode==='attack'&&!t){ r.mode='patrol'; r.tgt=null; }
+  if(r.mode==='break'){ const rt=vcross(r.f,r.u); dir=vnorm([rt[0]*r.side+r.f[0]*.25, rt[1]*r.side+r.f[1]*.25+.1, rt[2]*r.side+r.f[2]*.25]); thr=.84; }
+  else if(r.mode==='extend'){ dir=vnorm([r.f[0],Math.max(r.f[1],.12),r.f[2]]); thr=.84; }
+  else if(r.mode==='attack'&&t){ const L=cbLead(r,t,CB_BUL_SP); dir=L.dir; if(L.d>250) thr=Math.min(.84,D.thr+.1);
+    if(L.d<28||(L.d<55&&vdot([t.vx,t.vy,t.vz],r.f)<-.5*Math.hypot(t.vx,t.vy,t.vz))){ r.mode='break'; r.modeT=rnd(1,1.8); r.side=Math.random()<.5?-1:1; }   // too close / head-on: get out of the way
+    if(L.d<70&&vdot([t.vx,t.vy,t.vz],r.f)>0) thr=.45;                 // don't overshoot
+    const off=Math.acos(clamp(vdot(r.f,L.dir),-1,1))*180/Math.PI;
+    fire = L.d<D.range && off<D.cone && r.fireT<=0; r.aim=L.dir; r.aimId=t.id; }
+  else { // patrol: loiter near the fight (or anywhere, before it starts)
+    if(!r.wp||Math.hypot(r.wp[0]-r.x,r.wp[2]-r.z)<70||r.modeT<-25){ r.modeT=0;
+      const h=cbEngaged&&T.length?T[(Math.random()*T.length)|0]:null, a=Math.random()*6.28, d=rnd(140,300);
+      const x=clamp(h?h.x+Math.cos(a)*d:rnd(-300,300),-300,300), z=clamp(h?h.z+Math.sin(a)*d:rnd(-200,200),-200,200);
+      r.wp=[x, Math.max(ground(x,z)+50,(h?h.y:80)+rnd(0,50)), z]; }
+    dir=vnorm([r.wp[0]-r.x,(r.wp[1]-r.y)*.6,r.wp[2]-r.z]); dir[1]=clamp(dir[1],-.35,.35); vnorm(dir); thr=D.thr*.85; }
+  for(const o of cbTgts){ const dx=o.x-r.x, dy=o.y-r.y, dz=o.z-r.z, d=Math.hypot(dx,dy,dz);       // don't ram anyone
+    if(d<38&&d>.1&&(dx*r.f[0]+dy*r.f[1]+dz*r.f[2])/d>.2){ const k=clamp((38-d)/20,.4,1); dir=vnorm([dir[0]*(1-k)-dx/d*k, dir[1]*(1-k)-dy/d*k+.2*k, dir[2]*(1-k)-dz/d*k]); fire=false; } }
+  dir=cbSafeDir(r,dir);
+  cbSteer(r,dir,r.mode==='patrol'?Math.min(2.5,D.gmax):D.gmax,thr);
+  if(fire&&r.burst<=0){ r.burst=D.burst; r.burstT=0; r.fireT=rnd(...D.rof); }
+}
+function cbFoeAfterPhysics(r){
+  { const f=fwd(r); r.vx=f[0]*r.spd; r.vy=f[1]*r.spd; r.vz=f[2]*r.spd; }       // for lead aiming against them
+  if(r.st===0&&r.gnd){ r.killer=null; cbFoeDown(r,null,true); }
+  if(r.st===1&&(r.gnd||r.fallT>8||r.y<WATER_Y+1.5)){ r.st=2; r.root.visible=false; burstFx(r.x,r.y+.8,r.z,true); burstFx(r.x+1.5,r.y+2,r.z,true);
+    if(cbNear(r,260)) boom(.7,cbNear(r,90)?.3:.15,600); }
+}
+const cbNear = (o,d) => Math.hypot(player.x-o.x,player.y-o.y,player.z-o.z)<d;
+function cbFoeHit(r,dmg,by){
+  if(!r||r.st!==0) return false;
+  r.hp-=dmg; puff(r.x,r.y+1,r.z,'spark',.7,.3,0,2,0);
+  if(r.hp<=0) cbFoeDown(r,by,false);
+  else if(r.mode!=='break'&&Math.random()<cbD().brk*.5){ r.mode='break'; r.modeT=rnd(1.2,2.2); r.side=Math.random()<.5?-1:1; }
+  return true;
+}
+function cbFoeDown(r,by,crashed){
+  r.st=1; r.fallT=0; r.killer=by; r.side=Math.random()<.5?-1:1; r.burst=0; r.mode='down';
+  burstFx(r.x,r.y+.8,r.z,true); if(cbNear(r,300)) boom(.5,.2,800);
+  if(by){ cbKs[by]=(cbKs[by]||0)+1; }
+  if(by===SELF){ cbMe.kills++; const left=cbAlive();
+    say(left?`💥 SPLASH ONE! · ${left} LEFT`:'💥 SPLASH! · LAST BANDIT DOWN',1.8,'#7dffa0'); beep(660,.1,'triangle',.14); setTimeout(()=>beep(990,.16,'triangle',.14),110); rumble(.4,.6,250); }
+  else if(crashed&&cbNear(r,500)) say(`💥 A BANDIT FLEW INTO THE GROUND · ${cbAlive()} LEFT`,1.6,'#ffd34d');
+}
+
+// --- projectiles ---
+const cbBullets=[], cbMissiles=[], cbBulPool=[];
+const bulMatFoe=new THREE.MeshBasicMaterial({color:'#ff6a3a'}), bulMatPal=new THREE.MeshBasicMaterial({color:'#9fe8ff'});
+function cbBulMesh(mat){ const m=cbBulPool.pop()||new THREE.Mesh(bulGeo,mat); m.material=mat; m.visible=true; scene.add(m); return m; }
+function cbFreeBul(b){ scene.remove(b.m); if(cbBulPool.length<400) cbBulPool.push(b.m); }
+function cbClearShots(){ for(const b of cbBullets) cbFreeBul(b); cbBullets.length=0; for(const m of cbMissiles) scene.remove(m.m); cbMissiles.length=0; }
+// one round from a plane-like source (x,y,z,f,spd); team: 'me' (mine, real hits), 'foe' (host's enemies, real), 'fx' (cosmetic)
+function cbShoot(src,f,dir,spd,team,owner,err){
+  let dx=dir[0]+(Math.random()-.5)*2*err, dy=dir[1]+(Math.random()-.5)*2*err, dz=dir[2]+(Math.random()-.5)*2*err; const l=Math.hypot(dx,dy,dz); dx/=l; dy/=l; dz/=l;
+  const m=cbBulMesh(team==='me'?bulMat:team==='foe'?bulMatFoe:owner==='pal'?bulMatPal:bulMatFoe);
+  cbBullets.push({ m, x:src.x+f[0]*3, y:src.y+f[1]*3+.6, z:src.z+f[2]*3, vx:dx*CB_BUL_SP+f[0]*spd, vy:dy*CB_BUL_SP+f[1]*spd, vz:dz*CB_BUL_SP+f[2]*spd, team, owner, life:CB_BUL_LIFE });
+}
+function cbLockTarget(){ const f=fwd(player), c=Math.cos(CB_LOCK[0]*Math.PI/180); let best=null, bc=c;
+  for(const o of cbFoeList()){ const dx=o.x-player.x, dy=o.y-player.y, dz=o.z-player.z, d=Math.hypot(dx,dy,dz); if(d<6||d>CB_LOCK[1]) continue;
+    const cs=(dx*f[0]+dy*f[1]+dz*f[2])/d; if(cs>bc){ bc=cs; best=o; } } return best; }
+function cbGunAssist(){ const f=fwd(player), c=Math.cos(4*Math.PI/180); let best=null, bc=c;      // a little help: rounds bend onto a bandit within 4° of the nose
+  for(const o of cbFoeList()){ const dx=o.x-player.x, dy=o.y-player.y, dz=o.z-player.z, d=Math.hypot(dx,dy,dz); if(d<5||d>230) continue;
+    const L=cbLead(player,o,CB_BUL_SP), cs=vdot(L.dir,f); if(cs>bc){ bc=cs; best=L.dir; } } return best; }
+function cbFireMissile(){
+  if(!cbMe.alive||player.crashed>0||cbMe.repairT>0||state!=='race') return;
+  if(cbMe.msl<=0){ say('🚀 NO MISSILES · find a ? box',1,'#cccccc'); beep(200,.06,'square',.06); return; }
+  cbMe.msl--; const tg=cbLockTarget(), f=fwd(player), sp=66, m=misGeo.clone(); scene.add(m);
+  cbMissiles.push({ m, x:player.x+f[0]*3, y:player.y+f[1]*3+.4, z:player.z+f[2]*3, vx:f[0]*sp, vy:f[1]*sp, vz:f[2]*sp, target:tg, life:6, sp });
+  sweep(900,200,.5,'square',.08); boom(.35,.12,2500); rumble(.3,.3,120);
+  say(tg?'🚀 FOX TWO · LOCKED ON':'🚀 NO LOCK · fired straight',1.1,tg?'#ff9a7a':'#cccccc');
+}
+function cbHurt(dmg,why){
+  if(!cbMe.alive||player.crashed>0||cbMe.repairT>0||state!=='race') return;
+  cbMe.hp=Math.max(0,cbMe.hp-dmg); cbMe.hitFx=Math.min(.6,cbMe.hitFx+.22);
+  rumble(.6,.4,110); boom(.12,.1,1800); puff(player.x,player.y+1,player.z,'spark',.6,.3,0,2,0);
+  if(cbMe.hp<=0) cbPlayerDown(why||'SHOT DOWN');
+  else if(msg.t<.4) say(cbMe.hp<30?'⚠ HEAVY DAMAGE · '+Math.ceil(cbMe.hp)+'%':'HIT! · HULL '+Math.ceil(cbMe.hp)+'%',1,cbMe.hp<30?'#ff4d5e':'#ff9a7a');
+}
+function wreck(r){
+  burstFx(r.x,r.y+.8,r.z,true); burstFx(r.x+1,r.y+1.5,r.z-1,true);
+  const f=fwd(r), mats=[new THREE.MeshLambertMaterial({color:r.color}), new THREE.MeshLambertMaterial({color:'#f4f4f4'}), new THREE.MeshLambertMaterial({color:'#555a60'})];
+  for(let i=0;i<14;i++){ const m=new THREE.Mesh(debGeo,mats[i%3]); m.position.set(r.x,r.y+1,r.z); m.castShadow=true; scene.add(m);
+    const a=Math.random()*6.28; debris.push({m, vx:f[0]*r.spd*.35+Math.cos(a)*6*Math.random(), vy:4+Math.random()*7, vz:f[2]*r.spd*.35+Math.sin(a)*6*Math.random(), sx:(Math.random()-.5)*12, sz:(Math.random()-.5)*12}); }
+  boom(.9,.35,500); setTimeout(()=>boom(.5,.15,900),120); rumble(1,1,700);
+}
+function cbPlayerDown(why){
+  if(!cbMe.alive) return;
+  cbMe.alive=false; cbMe.downs++; cbMe.hp=0; cbMe.burst=0; cbMe.wreckT=cbCoop?2.5:3.2; player.crashed=cbMe.wreckT; player.root.visible=false; wreck(player); player.spd=0;
+  say('💥 '+why+(cbCoop?' · repairs on the runway':''),3,'#ff4d5e');
+}
+function cbToRunway(){
+  const f=-125, sd=[-6,6][Math.random()*2|0];
+  Object.assign(player,{x:P2[0][0]+rw.dx*f+rw.px*sd, z:P2[0][1]+rw.dz*f+rw.pz*sd, y:rw.h+1, hd:Math.atan2(rw.dz,rw.dx), spd:0, pitch:0, pcmd:0, thr:0, air:0, gnd:true, bank:0, steer:0,
+    crashed:0, heat:0, overT:0, penT:0, slowT:0, trim:0, stalled:false, spin:0, f:null});
+  setAtt(player); player.root.visible=true; snapCam=true; clearDebris();
+}
+function cbPickup(){
+  const msl=Math.random()<.35;
+  if(msl){ const was=cbMe.msl; cbMe.msl=Math.min(CB_MSL_MAX,cbMe.msl+CB_MSL_BOX); say(`🚀 +${cbMe.msl-was} MISSILES · ${cbMe.msl} on board`,1.4,'#ffb3e0'); }
+  else { const was=cbMe.ammo; cbMe.ammo=Math.min(CB_AMMO_MAX,cbMe.ammo+CB_AMMO_BOX); say(`🔫 +${cbMe.ammo-was} ROUNDS · ${cbMe.ammo}`,1.4,'#ffb3e0'); }
+  beep(660,.06,'triangle',.12); setTimeout(()=>beep(990,.06,'triangle',.12),60); setTimeout(()=>beep(1320,.1,'triangle',.12),120); rumble(.1,.3,80);
+}
+let cbBotFire=false;
+function cbFireHeld(){ return !!(keys.Space||touch.use||(padPrev&&padPrev.rb)||cbBotFire); }
+// test autopilot for the player (headless sims only: set player.cbBot=player.ai=true)
+function cbBotFly(r,dt){
+  ensureAtt(r); cbBotFire=false;
+  if(r.gnd){ r.thr=1; r.pcmd=.7; r.steer=0; r.rudder=0; r.cAI=null; r.rollCmd=0; return; }
+  let best=null, bd=1e9; for(const o of cbFoeList()){ const d=Math.hypot(o.x-r.x,o.y-r.y,o.z-r.z); if(d<bd){ bd=d; best=o; } }
+  let dir=[r.f[0],.15,r.f[2]];
+  if(best&&(r.y-ground(r.x,r.z)>25||bd<150)){ const L=cbLead(r,best,CB_BUL_SP); dir=L.dir; cbBotFire=L.d<200&&vdot(r.f,L.dir)>Math.cos(7*Math.PI/180);
+    if(L.d<35) dir=vnorm([dir[0]-(best.x-r.x)/L.d*1.5, dir[1]+.4, dir[2]-(best.z-r.z)/L.d*1.5]); }
+  // bandit on my six: break hard for a couple of seconds, like a pilot would
+  r.botBrk=(r.botBrk||0)-dt;
+  if(r.botBrk<=0&&cbHost){ const six=foes.slice(0,cbN).find(o=>{ if(o.st!==0) return false; const dx=r.x-o.x, dy=r.y-o.y, dz=r.z-o.z, d=Math.hypot(dx,dy,dz); return d<200&&(dx*o.f[0]+dy*o.f[1]+dz*o.f[2])/d>.96; });
+    if(six&&Math.random()<dt*2){ r.botBrk=2.2; r.botSide=Math.random()<.5?-1:1; } }
+  if(r.botBrk>0){ const rt=vcross(r.f,r.u); dir=[rt[0]*r.botSide+r.f[0]*.2, rt[1]*r.botSide+.1, rt[2]*r.botSide+r.f[2]*.2]; cbBotFire=false; }
+  cbSteer(r,cbSafeDir(r,vnorm(dir)),5,.84);
+  if(cbMe.msl>0&&cbLockTarget()&&Math.random()<dt*.4) cbFireMissile();
+}
+
+// --- enemy list as everyone sees it: host = the simulated planes, guest = the host's snapshots ---
+function cbFoeList(){ return cbHost ? foes.slice(0,cbN).filter(r=>r.st===0) : foes.slice(0,cbView.n).filter(r=>r.vs===0&&r.root.visible); }
+function cbViewAlive(){ const fr=cbView.frames[cbView.frames.length-1]; if(!fr) return cbView.n; let n=0; for(let i=0;i<cbView.n;i++) if(fr[1][i*10+8]===0) n++; return n; }
+
+function cbUpdate(dt,inp){
+  if(!cbActive) return;
+  const D=cbD(), racing=state==='race';
+  if(cbHost) cbBuildTargets();
+  // engagement: once a pilot has been airborne a few seconds (or 25 s after GO), the bandits come for you
+  if(racing){ cbEngT+=dt; if(!cbEngaged&&(cbEngT>25||(cbHost&&cbTgts.some(t=>!t.gnd)&&cbMe.airT>4)||(cbCoop&&cbHost&&cbTgts.some(t=>!t.me&&!t.gnd)))){ cbEngaged=true; if(cbHost) say('⚠ BANDITS INBOUND',1.6,'#ff7a5a'); } }
+  // my plane: wreck → (co-op) repairs on the runway
+  if(player.crashed>0){ player.crashed-=dt; cbMe.wreckT-=dt;
+    if(player.crashed<=0){ if(cbCoop){ cbToRunway(); cbMe.repairT=CB_REPAIR; say('🔧 REPAIRING · '+CB_REPAIR+' s',2,'#9fe8ff'); }
+      else { player.crashed=.01; if(cbEndT<0){ cbEndT=.01; cbWon=false; } } } }
+  if(cbMe.repairT>0){ cbMe.repairT-=dt; player.thr=0; player.spd=0;
+    if(cbMe.repairT<=0){ cbMe.repairT=0; cbMe.alive=true; cbMe.hp=CB_HP; cbMe.ammo=Math.max(cbMe.ammo,CB_START_AMMO); cbMe.safeT=6; say('🔧 REPAIRS DONE · TAKE OFF!',2,'#7dffa0'); beep(660,.1,'triangle',.12); setTimeout(()=>beep(880,.15,'triangle',.12),120); } }
+  if(cbMe.alive&&!player.gnd&&player.air>.5){ cbMe.airT+=dt; if(cbMe.safeT>0) cbMe.safeT-=dt; } else if(cbMe.alive&&player.gnd) cbMe.airT=0;
+  cbMe.hitFx=Math.max(0,cbMe.hitFx-dt); cbMe.hitMark=Math.max(0,cbMe.hitMark-dt); cbMe.gap-=dt;
+  updateDebris(dt);
+  // my guns: hold to keep firing bursts
+  const canFire=racing&&cbMe.alive&&!player.crashed&&cbMe.repairT<=0&&!cbMenu;
+  if(canFire&&cbFireHeld()&&cbMe.burst<=0&&cbMe.gap<=0){ if(cbMe.ammo>0){ cbMe.burst=Math.min(CB_BURST,cbMe.ammo); cbMe.burstT=0; } else if(cbMe.gap<=0){ cbMe.gap=.6; beep(160,.05,'square',.06); if(msg.t<.3) say('🔫 OUT OF AMMO · find a ? box',1,'#cccccc'); } }
+  cbMe.firing=0;
+  if(cbMe.burst>0){ if(!canFire) cbMe.burst=0; cbMe.burstT-=dt; cbMe.firing=1;
+    while(cbMe.burstT<=0&&cbMe.burst>0&&cbMe.ammo>0){ cbMe.burst--; cbMe.ammo--; cbMe.burstT+=.06; const f=fwd(player), as=cbGunAssist();
+      cbShoot(player,f,as||f,player.spd,'me',SELF,.006); beep(1100+Math.random()*200,.035,'square',.05); rumble(.05,.25,40); }
+    if(cbMe.burst<=0||cbMe.ammo<=0){ cbMe.burst=0; cbMe.gap=.14; } }
+  // enemies (host)
+  if(cbHost){ for(const r of foes.slice(0,cbN)){ if(r.st===2) continue;
+      if(state==='race'||state==='countdown') cbAI(r,dt);
+      physics(r,dt); cbFoeAfterPhysics(r);
+      if(r.burst>0&&r.st===0){ r.burstT-=dt; r.firing=1;
+        while(r.burstT<=0&&r.burst>0){ r.burst--; r.burstT+=.07; const f=fwd(r); cbShoot(r,f,r.aim||f,r.spd,'foe',r,D.aim); if(cbNear(r,160)) beep(700+Math.random()*120,.03,'square',.035); } }
+      else r.firing=0; }
+    // mid-air collisions with me
+    if(cbMe.alive&&!player.crashed&&!player.gnd) for(const r of foes.slice(0,cbN)){ if(r.st!==0) continue; const d=Math.hypot(r.x-player.x,r.y-player.y,r.z-player.z);
+      if(d<4.2){ cbFoeHit(r,60,SELF); cbHurt(35,'MID-AIR COLLISION'); const k=(4.2-d)/2/(d||1); player.x-=(r.x-player.x)*k; player.y-=(r.y-player.y)*k; player.z-=(r.z-player.z)*k; } }
+    // enemies don't collide with each other: they just keep apart
+    for(let i=0;i<cbN;i++) for(let j=i+1;j<cbN;j++){ const a=foes[i], b=foes[j]; if(a.st||b.st) continue; const dx=b.x-a.x, dy=b.y-a.y, dz=b.z-a.z, d=Math.hypot(dx,dy,dz);
+      if(d<6&&d>0){ const k=(6-d)/2/d; a.x-=dx*k; a.y-=dy*k; a.z-=dz*k; b.x+=dx*k; b.y+=dy*k; b.z+=dz*k; } }
+    for(const r of foes.slice(0,cbN)) if(r.st!==2) syncMesh(r);
+  } else cbViewFrame(dt);
+  if(cbCoop) cbRemoteFx(dt);
+  // bullets
+  const fl=cbFoeList();
+  for(let i=cbBullets.length-1;i>=0;i--){ const b=cbBullets[i]; b.life-=dt; const px=b.x, py=b.y, pz=b.z; b.x+=b.vx*dt; b.y+=b.vy*dt; b.z+=b.vz*dt;
+    let dead=b.life<=0||b.y<ground(b.x,b.z);
+    if(!dead&&b.team==='me') for(const o of fl){ if(segDist(px,py,pz,b.x,b.y,b.z,o.x,o.y+.8,o.z)<2.6){ dead=true; cbMe.hitMark=.25; beep(1600,.03,'triangle',.06);
+        if(cbHost) cbFoeHit(o,CB_MY_DMG,SELF); else { cbReportHit(o.idx,CB_MY_DMG); puff(o.x,o.y+1,o.z,'spark',.7,.3,0,2,0); } break; } }
+    if(!dead&&b.team==='foe') for(const t of cbTgts){ if(t.gnd||t.safe) continue; if(segDist(px,py,pz,b.x,b.y,b.z,t.x,t.y+.8,t.z)<2.4){ dead=true;
+        if(t.me) cbHurt(D.dmg,'SHOT DOWN'); else { cbSendDmg(t.id,D.dmg); puff(t.x,t.y+1,t.z,'spark',.6,.3,0,2,0); } break; } }
+    if(dead){ cbFreeBul(b); cbBullets.splice(i,1); continue; }
+    b.m.position.set(b.x,b.y,b.z); b.m.lookAt(b.x+b.vx,b.y+b.vy,b.z+b.vz); }
+  // my missiles: lock-on, turn rate limited (a hard break can beat one)
+  for(let i=cbMissiles.length-1;i>=0;i--){ const m=cbMissiles[i]; m.life-=dt;
+    const t=m.target; if(t&&!(cbHost?t.st===0:t.vs===0&&t.root.visible)) m.target=null;
+    if(m.target){ const tv=cbHost?fwd(t).map(x=>x*t.spd):[t.vx||0,t.vy||0,t.vz||0], d0=Math.hypot(t.x-m.x,t.y-m.y,t.z-m.z), tg=Math.min(1.5,d0/m.sp)*.9;
+      const dx=t.x+tv[0]*tg-m.x, dy=t.y+.8+tv[1]*tg-m.y, dz=t.z+tv[2]*tg-m.z, d=Math.hypot(dx,dy,dz)||1;
+      const vx=m.vx/m.sp, vy=m.vy/m.sp, vz=m.vz/m.sp, cs=clamp((dx*vx+dy*vy+dz*vz)/d,-1,1), ang=Math.acos(cs), turn=Math.min(1,2.6*dt/Math.max(ang,1e-4));
+      let nx=vx+(dx/d-vx)*turn, ny=vy+(dy/d-vy)*turn, nz=vz+(dz/d-vz)*turn; const l=Math.hypot(nx,ny,nz)||1; m.vx=nx/l*m.sp; m.vy=ny/l*m.sp; m.vz=nz/l*m.sp;
+      if(ang>1.4&&d0<60) m.target=null; }                                               // overshot: lost lock
+    const px=m.x, py=m.y, pz=m.z; m.x+=m.vx*dt; m.y+=m.vy*dt; m.z+=m.vz*dt;
+    puff(m.x-m.vx*.02,m.y-m.vy*.02,m.z-m.vz*.02,Math.random()<.3?'fire':'smoke',.5+Math.random()*.3,.7,0,.6,0);
+    let dead=m.life<=0||m.y<ground(m.x,m.z), hit=null;
+    if(!dead) for(const o of fl){ if(segDist(px,py,pz,m.x,m.y,m.z,o.x,o.y+.8,o.z)<(o===m.target?4.5:3.2)){ hit=o; dead=true; break; } }
+    if(hit){ if(cbHost) cbFoeHit(hit,CB_MSL_DMG,SELF); else cbReportHit(hit.idx,CB_MSL_DMG); cbMe.hitMark=.4; }
+    if(dead){ burstFx(m.x,m.y,m.z,true); if(cbNear(m,150)) boom(.6,.2,700); scene.remove(m.m); cbMissiles.splice(i,1); continue; }
+    m.m.position.set(m.x,m.y,m.z); m.m.lookAt(m.x+m.vx,m.y+m.vy,m.z+m.vz); }
+  // round over
+  if(racing&&cbEndT<0){
+    if(cbHost&&cbAlive()===0){ cbDone=true; cbWon=true; cbEndT=3; say(cbCoop?'🏆 ALL BANDITS DOWN!':'🏆 ALL '+cbN+' BANDITS DOWN!',3,'#7dffa0'); beep(523,.15,'triangle',.15); setTimeout(()=>beep(784,.3,'triangle',.15),160); }
+    else if(!cbHost&&cbView.done){ cbWon=true; cbEndT=3; say('🏆 ALL BANDITS DOWN!',3,'#7dffa0'); beep(523,.15,'triangle',.15); setTimeout(()=>beep(784,.3,'triangle',.15),160); }
+    else if(!cbHost&&(Date.now()-cbView.last>7000)){ cbHostLost=true; cbWon=false; cbEndT=.5; say('THE HOST LEFT · ROUND OVER',2.5,'#ffd34d'); } }
+  if(cbEndT>0){ cbEndT-=dt; if(cbEndT<=0){ cbEndT=0; showCombatResults(); } }
+  cbOutHits=cbOutHits.filter(h=>Date.now()-h[3]<2500); cbOutDm=cbOutDm.filter(h=>Date.now()-h[3]<2500);
+}
+function cbReportHit(idx,d){ cbOutHits.push([SELF+'.'+(cbEvN++),idx,d,Date.now()]); }
+function cbSendDmg(id,d){ cbOutDm.push([id,SELF+'.'+(cbEvN++),d,Date.now()]); }
+
+// --- co-op wire format (inside the 'st' state message) ---
+function cbStateOut(){
+  if(!cbActive||!cbCoop) return null;
+  const o={ cbs:{ me:SELF, hp:Math.ceil(cbMe.hp), dn:!cbMe.alive&&player.crashed>0?1:cbMe.repairT>0?2:0, k:cbMe.kills, fg:cbMe.firing, g:player.gnd?1:0, sf:cbMe.safeT>0?1:0,
+      ms:cbMissiles.slice(0,4).map(m=>[r1(m.x),r1(m.y),r1(m.z)]), h:cbOutHits.slice(-12).map(h=>[h[0],h[1],h[2]]) } };
+  if(cbHost){ const e=[];
+    for(let i=0;i<cbN;i++){ const r=foes[i], q=r.body.quaternion; e.push(r1(r.x),r1(r.y),r1(r.z),r3(q.x),r3(q.y),r3(q.z),r3(q.w),Math.max(0,Math.round(r.hp)),r.st,r.firing?1:0); }
+    o.cbh={ n:cbN, e, ks:cbKs, dm:cbOutDm.slice(-16).map(h=>[h[0],h[1],h[2]]), done:cbDone?1:0, eg:cbEngaged?1:0 }; }
+  return o;
+}
+function cbIngest(rp,p,now){
+  if(!cbActive||!cbCoop||!liveRace||p.rid!==liveRace.id) return;
+  const s=p.cbs;
+  if(cbHost&&s&&typeof s.me==='string'&&Array.isArray(s.h)) for(const h of s.h){ if(!Array.isArray(h)||typeof h[0]!=='string'||cbSeen.has(h[0])) continue; cbSeen.add(h[0]);
+    const r=foes[h[1]|0]; if(r&&(h[1]|0)<cbN&&isNum(h[2])) cbFoeHit(r,clamp(h[2],0,CB_MSL_DMG),s.me); }
+  const c=p.cbh;
+  if(!cbHost&&c&&Array.isArray(c.e)&&isNum(c.n)&&isNum(p.t)){
+    cbView.host=rp.peer; cbView.n=clamp(c.n|0,0,CB_MAX); cbView.last=now; cbView.ks=c.ks&&typeof c.ks==='object'?c.ks:{}; cbView.done=c.done?1:0; cbEngaged=!!c.eg;
+    if(c.e.length>=cbView.n*10&&c.e.every(isNum)&&(!cbView.frames.length||p.t>cbView.frames[cbView.frames.length-1][0])){ cbView.frames.push([p.t,c.e]); if(cbView.frames.length>40) cbView.frames.shift(); }
+    if(Array.isArray(c.dm)) for(const d of c.dm){ if(!Array.isArray(d)||d[0]!==SELF||typeof d[1]!=='string'||cbSeen.has(d[1])) continue; cbSeen.add(d[1]); if(isNum(d[2])) cbHurt(clamp(d[2],0,50),'SHOT DOWN'); }
+    const k=cbView.ks[SELF]; if(isNum(k)&&k>cbMe.kills){ const left=cbViewAlive(); cbMe.kills=k; say(left?`💥 SPLASH ONE! · ${left} LEFT`:'💥 SPLASH! · LAST BANDIT DOWN',1.8,'#7dffa0'); beep(660,.1,'triangle',.14); setTimeout(()=>beep(990,.16,'triangle',.14),110); }
+  }
+}
+// guest: draw the host's enemies ~LIVE_DELAY behind, interpolating between snapshots
+function cbViewFrame(dt){
+  const fr=cbView.frames, hp=cbView.host&&remotes.get(cbView.host); if(!fr.length){ for(const r of foes) r.root.visible=false; return; }
+  const now=Date.now(), off=hp&&hp.off!=null?hp.off:now-fr[fr.length-1][0], tt=now-off-LIVE_DELAY;
+  let i=fr.length-1; while(i>0&&fr[i-1][0]>tt) i--;
+  let A,B,u; if(tt>=fr[fr.length-1][0]||fr.length===1){ A=B=fr[fr.length-1]; u=0; } else if(i===0&&tt<fr[0][0]){ A=B=fr[0]; u=0; } else { A=fr[i-1]; B=fr[i]; u=clamp((tt-A[0])/Math.max(1,B[0]-A[0]),0,1); }
+  for(let k=0;k<CB_MAX;k++){ const r=foes[k]; if(!r) continue; if(k>=cbView.n){ r.root.visible=false; continue; }
+    const a=A[1], b=B[1], j=k*10, st=b[j+8];
+    const nx=lerp(a[j],b[j],u), ny=lerp(a[j+1],b[j+1],u), nz=lerp(a[j+2],b[j+2],u);
+    if(r.vs===0&&st>=1){ burstFx(nx,ny+.8,nz,true); if(cbNear({x:nx,y:ny,z:nz},300)) boom(.5,.2,800); }
+    if(r.vs===1&&st===2){ burstFx(nx,ny+.8,nz,true); burstFx(nx+1.5,ny+2,nz,true); if(cbNear({x:nx,y:ny,z:nz},260)) boom(.7,.15,600); }
+    if(dt>0&&r.vs!=null&&r.vx!=null){ const kk=Math.min(1,dt*6); r.vx+=((nx-r.x)/dt-r.vx)*kk; r.vy+=((ny-r.y)/dt-r.vy)*kk; r.vz+=((nz-r.z)/dt-r.vz)*kk; } else { r.vx=r.vy=r.vz=0; }
+    r.x=nx; r.y=ny; r.z=nz; r.vs=st; r.hp=b[j+7]; r.idx=k;
+    _q1.set(a[j+3],a[j+4],a[j+5],a[j+6]).normalize(); _q2.set(b[j+3],b[j+4],b[j+5],b[j+6]).normalize(); _q1.slerp(_q2,u);
+    r.root.visible=st<2; r.root.position.set(r.x,r.y,r.z); r.body.quaternion.copy(_q1); r.prop.rotation.x+=dt*60;
+    v3.set(1,0,0).applyQuaternion(_q1); r.f=[v3.x,v3.y,v3.z];
+    r.fxT=(r.fxT||0)-dt;
+    if(st===1&&r.fxT<=0){ r.fxT=.04; puff(r.x-v3.x*2,r.y+.8,r.z-v3.z*2,Math.random()<.45?'fire':'dark',.9+Math.random()*.6,1.1,0,1,0); }
+    if(st===0&&b[j+9]&&r.fxT<=0&&cbNear(r,450)){ r.fxT=.07; cbShoot(r,r.f,r.f,30,'fx','foe',.02); if(cbNear(r,160)) beep(700+Math.random()*120,.03,'square',.035); }
+  }
+}
+// co-op: other pilots' tracers and missiles (cosmetic), and a fireball when one is shot down
+function cbRemoteFx(dt){
+  for(const rp of remotes.values()){ const s=rp.p&&rp.p.cbs; if(!s||!liveRace||rp.p.rid!==liveRace.id) continue;
+    const vis=rp.mesh&&rp.mesh.root.visible;
+    if(rp.cbDn===0&&s.dn===1&&isNum(rp.x)) { wreckAt(rp.x,rp.y,rp.z); }
+    rp.cbDn=s.dn|0; rp.cbT=(rp.cbT||0)-dt;
+    if(vis&&s.fg&&rp.cbT<=0&&cbNear(rp,500)){ rp.cbT=.06; const q=rp.mesh.body.quaternion; v3.set(1,0,0).applyQuaternion(q); const f=[v3.x,v3.y,v3.z]; cbShoot(rp,f,f,30,'fx','pal',.01); }
+    if(Array.isArray(s.ms)) for(const m of s.ms) if(Array.isArray(m)&&m.length===3&&m.every(isNum)) puff(m[0],m[1],m[2],Math.random()<.3?'fire':'smoke',.5,.5,0,.6,0);
+  }
+}
+function wreckAt(x,y,z){ burstFx(x,y+.8,z,true); burstFx(x+1,y+1.5,z-1,true); if(cbNear({x,y,z},300)) boom(.7,.18,500); }
+
+// --- results ---
+function cbBestKey(){ return 'cb:'+DIFFS[diff].n; }
+function showCombatResults(){
+  state='results'; cbMenu=false; show('pause',0);
+  const t=simT, rows=[];
+  const ks=cbHost?cbKs:cbView.ks;
+  rows.push({name:'You',color:player.color,kills:cbCoop?(ks[SELF]||cbMe.kills):cbMe.kills,downs:cbMe.downs,me:true});
+  if(cbCoop) for(const rp of remotes.values()){ const s=rp.p&&rp.p.cbs; if(!s||!liveRace||rp.p.rid!==liveRace.id) continue; rows.push({name:remoteName(rp),color:rp.color,kills:ks[s.me]||s.k||0,downs:null}); }
+  rows.sort((a,b)=>b.kills-a.kills);
+  const total=cbHost?cbN:cbView.n, down=total-(cbHost?cbAlive():cbViewAlive());
+  $('resTitle').textContent = cbWon ? (cbCoop?'⚔ CO-OP VICTORY!':'⚔ VICTORY!') : cbHostLost ? '⚔ ROUND OVER' : '💥 SHOT DOWN · GAME OVER';
+  resHead(['','PILOT','KILLS',cbCoop?'':'TIME']);
+  const body=$('resBody'); body.textContent='';
+  rows.forEach((r,i)=>{ const tr=document.createElement('tr'); if(r.me) tr.className='me';
+    const td=x=>{ const c=document.createElement('td'); c.textContent=x; tr.appendChild(c); return c; };
+    td(String(i+1)); const nm=td(''); const dot=document.createElement('span'); dot.className='dot'; dot.style.background=r.color; nm.appendChild(dot); nm.appendChild(document.createTextNode(r.name+(r.me&&cbCoop&&r.downs?` (shot down ${r.downs}×)`:'')));
+    td(String(r.kills)); td(r.me&&!cbCoop?fmt(t):''); body.appendChild(tr); });
+  const notes=[`${down} of ${total} bandits down · ${fmt(t)} · ${DIFFS[cbDi()].n}.`];
+  if(!cbCoop&&cbWon){ const all=loadBest(), k=cbBestKey(), prev=all[k]||{}; if(!prev.cb||t<prev.cb){ if(prev.cb) notes.push('New personal best!'); prev.cb=t; } all[k]=prev; try{ localStorage.setItem('ulr3-best',JSON.stringify(all)); }catch(e){} notes.push('Best: '+fmt(prev.cb)); }
+  if(!cbCoop&&!cbWon) notes.push('Tip: grab ? boxes for ammo and missiles; break hard when a bandit gets on your tail.');
+  if(cbCoop) notes.push(cbHost?'FIGHT AGAIN starts a new co-op round for everyone here.':'Anyone can press FIGHT AGAIN to start a new round.');
+  $('resNote').textContent=notes.join(' ');
+  $('bAgain').textContent='FIGHT AGAIN'; $('resHint').textContent='Enter / A to fight again · F / X for free flight · Esc / B for menu';
+  show('results',1); show('touch',0); show('hudBtns',0);
+}
+function resHead(cols){ const h=$('resHead'); h.textContent=''; for(const c of cols){ const th=document.createElement('th'); th.textContent=c; h.appendChild(th); } }
+
+// --- HUD ---
+function drawCombatHUD(t){
+  const p=player, alive=cbAlive(), total=cbHost?cbN:cbView.n;
+  box(12,12,168,132);
+  txt('⚔ COMBAT',24,34,14,'#ff9a7a','left',700);
+  txt('BANDITS',24,56,11,'rgba(255,255,255,.65)'); txt(alive+'/'+total,24,84,26,'#ffd34d','left',700);
+  txt('KILLS',104,56,11,'rgba(255,255,255,.65)'); txt(String(cbMe.kills),104,84,26,'#7dffa0','left',700);
+  const hp=cbMe.hp/CB_HP; txt('HULL',24,108,10,'rgba(255,255,255,.6)');
+  hx.fillStyle='rgba(255,255,255,.15)'; rr(hx,60,100,108,9,4); hx.fill();
+  if(!(hp<.3&&Math.sin(t*10)<0)){ hx.fillStyle=hp>.6?'#7dffa0':hp>.3?'#ffd34d':'#ff4d5e'; rr(hx,60,100,Math.max(4,108*hp),9,4); hx.fill(); }
+  txt('🔫 '+cbMe.ammo,24,134,14,cbMe.ammo?'#fff27a':'#ff9a7a','left',700); txt('🚀 '+cbMe.msl,104,134,14,cbMe.msl?'#ffb3e0':'rgba(255,255,255,.4)','left',700);
+  txt(fmt(state==='countdown'?0:simT),VW/2,VW<640?226:44,30,'#fff','center',700);
+  // minimap
+  const mw=Math.min(200,VW*.3), mh=mw*600/880, mx=VW-mw-12, my=12, sx=mw/880, M=(x,z)=>[mx+(x+440)*sx, my+(z+300)*sx];
+  box(mx,my,mw,mh);
+  { const a=M(rw.cx-rw.dx*rw.half,rw.cz-rw.dz*rw.half), b=M(rw.cx+rw.dx*rw.half,rw.cz+rw.dz*rw.half); hx.strokeStyle='#b4e07c'; hx.lineWidth=4; hx.beginPath(); hx.moveTo(...a); hx.lineTo(...b); hx.stroke(); }
+  for(const b of boxes){ if(!b.active) continue; const [X,Y]=M(b.x,b.z); hx.fillStyle='rgba(255,122,200,.7)'; hx.fillRect(X-1.5,Y-1.5,3,3); }
+  const fl=cbFoeList();
+  for(const o of fl){ const [X,Y]=M(o.x,o.z); hx.fillStyle='#ff4040'; hx.beginPath(); hx.moveTo(X,Y-4); hx.lineTo(X+4,Y); hx.lineTo(X,Y+4); hx.lineTo(X-4,Y); hx.closePath(); hx.fill(); }
+  for(const rp of remotes.values()){ if(!rp.mesh||!rp.mesh.root.visible) continue; const [X,Y]=M(rp.x,rp.z); hx.fillStyle=rp.color; hx.beginPath(); hx.arc(X,Y,3.5,0,7); hx.fill(); }
+  { const [X,Y]=M(p.x,p.z); hx.save(); hx.translate(X,Y); hx.rotate(p.hd); hx.fillStyle=p.color; hx.strokeStyle='#000'; hx.lineWidth=1;
+    hx.beginPath(); hx.moveTo(7,0); hx.lineTo(-5,-5); hx.lineTo(-3,0); hx.lineTo(-5,5); hx.closePath(); hx.fill(); hx.stroke(); hx.restore(); }
+  // co-op pilots
+  if(cbCoop){ let ly=my+mh+20; const ks=cbHost?cbKs:cbView.ks;
+    txt(`You · ${cbMe.kills} kill${cbMe.kills===1?'':'s'}`,VW-16,ly,13,'#ffd34d','right',700); ly+=17;
+    for(const rp of remotes.values()){ const s=rp.p&&rp.p.cbs; if(!s||!liveRace||rp.p.rid!==liveRace.id) continue; const k=ks[s.me]||0;
+      txt(`${remoteName(rp)} · ${k} · ${s.dn===1?'💥 down':s.dn===2?'🔧 repairing':s.hp+'%'}`,VW-16,ly,13,rp.color,'right',600); ly+=17; } }
+  const {bx,by,bw}=bottomStrip(p,t);
+  if(state==='race'&&!p.crashed){ if(p.overT>0) txt('OVERHEATED · COOLING '+p.overT.toFixed(1)+'s',VW/2,by-86,16,'#ff4d5e','center',700);
+    else if(p.heat>.8&&Math.sin(t*10)>-.4) txt('ENGINE HOT · EASE OFF',VW/2,by-86,15,'#ff9a7a','center',700); }
+  // enemy markers, gun sight, missile lock
+  const alivePl=cbMe.alive&&!p.crashed&&cbMe.repairT<=0;
+  let onScr=0, nearest=null, nd=1e9;
+  for(const o of fl){ const d=Math.hypot(o.x-p.x,o.y-p.y,o.z-p.z); if(d<nd){ nd=d; nearest=o; } if(d>650) continue;
+    v3.set(o.x,o.y+.8,o.z).project(camera); if(v3.z>=1) continue; const X=(v3.x+1)/2*VW, Y=(1-v3.y)/2*VH; if(X<0||X>VW||Y<0||Y>VH) continue; onScr++;
+    const a=Math.max(9,Math.min(22,900/d)); hx.strokeStyle='rgba(255,64,64,.9)'; hx.lineWidth=2;
+    hx.beginPath(); hx.moveTo(X,Y-a); hx.lineTo(X+a,Y); hx.lineTo(X,Y+a); hx.lineTo(X-a,Y); hx.closePath(); hx.stroke();
+    if(d<400) txt(Math.round(d)+' m',X,Y+a+14,11,'#ff8080','center',700);
+    if(d<260&&o.hp!=null){ const hh=clamp(o.hp/cbD().hp,0,1); hx.fillStyle='rgba(0,0,0,.4)'; hx.fillRect(X-12,Y-a-8,24,3); hx.fillStyle='#ff4040'; hx.fillRect(X-12,Y-a-8,24*hh,3); } }
+  if(alivePl&&!onScr&&nearest){ v3.set(nearest.x,nearest.y,nearest.z).project(camera); let sx2=(v3.x+1)/2*VW, sy2=(1-v3.y)/2*VH; const behind=v3.z>1, mg=60;
+    if(behind){ sx2=VW-sx2; sy2=VH-sy2; } let dx=sx2-VW/2, dy2=sy2-VH/2; if(behind&&Math.abs(dy2)<1) dy2=1;
+    const s2=Math.min((VW/2-mg)/Math.abs(dx||1e-6),(VH/2-mg)/Math.abs(dy2||1e-6)), ax=VW/2+dx*s2, ay=VH/2+dy2*s2, an=Math.atan2(dy2,dx);
+    hx.save(); hx.translate(ax,ay); hx.rotate(an); hx.fillStyle='#ff4040'; hx.strokeStyle='rgba(0,0,0,.5)'; hx.lineWidth=2;
+    hx.beginPath(); hx.moveTo(16,0); hx.lineTo(-9,-11); hx.lineTo(-4,0); hx.lineTo(-9,11); hx.closePath(); hx.fill(); hx.stroke(); hx.restore();
+    txt('BANDIT '+Math.round(nd)+' m',ax-Math.cos(an)*34,ay-Math.sin(an)*34+5,12,'#ff8080','center',700); }
+  if(alivePl&&state==='race'){ const f=fwd(p); v3.set(p.x+f[0]*90,p.y+f[1]*90+.8,p.z+f[2]*90).project(camera);
+    if(v3.z<1){ const cx=(v3.x+1)/2*VW, cy=(1-v3.y)/2*VH; hx.strokeStyle=cbMe.hitMark>0?'#7dffa0':'rgba(255,255,255,.85)'; hx.lineWidth=2; hx.beginPath(); hx.arc(cx,cy,18,0,7); hx.stroke();
+      hx.beginPath(); hx.moveTo(cx-28,cy); hx.lineTo(cx-11,cy); hx.moveTo(cx+11,cy); hx.lineTo(cx+28,cy); hx.moveTo(cx,cy+11); hx.lineTo(cx,cy+28); hx.stroke();
+      hx.fillStyle='#fff'; hx.beginPath(); hx.arc(cx,cy,2,0,7); hx.fill();
+      if(cbMe.hitMark>0){ hx.strokeStyle='#7dffa0'; hx.lineWidth=2.5; for(const [a,b] of [[-1,-1],[1,-1],[1,1],[-1,1]]){ hx.beginPath(); hx.moveTo(cx+a*7,cy+b*7); hx.lineTo(cx+a*14,cy+b*14); hx.stroke(); } } }
+    if(cbMe.msl>0){ const tg=cbLockTarget(); if(tg){ v3.set(tg.x,tg.y+.8,tg.z).project(camera);
+      if(v3.z<1){ const lx=(v3.x+1)/2*VW, ly=(1-v3.y)/2*VH, a=26+Math.sin(t*14)*3; hx.strokeStyle='#ff4d5e'; hx.lineWidth=3;
+        for(const [sx,sy] of [[-1,-1],[1,-1],[1,1],[-1,1]]){ hx.beginPath(); hx.moveTo(lx+sx*a,ly+sy*(a-10)); hx.lineTo(lx+sx*a,ly+sy*a); hx.lineTo(lx+sx*(a-10),ly+sy*a); hx.stroke(); }
+        txt('LOCK · '+(isTouch?'MSL':padId?'LB':'X')+' TO FIRE',lx,ly-a-8,12,'#ff4d5e','center',700); } } } }
+  // being shot at / damage
+  if(cbMe.hitFx>0){ const g=hx.createRadialGradient(VW/2,VH/2,Math.min(VW,VH)*.3,VW/2,VH/2,Math.max(VW,VH)*.7); g.addColorStop(0,'rgba(255,0,0,0)'); g.addColorStop(1,`rgba(255,30,30,${Math.min(.5,cbMe.hitFx)})`); hx.fillStyle=g; hx.fillRect(0,0,VW,VH); }
+  if(alivePl&&cbMe.hp<50&&Math.random()<(cbMe.hp<25?.6:.25)){ const f=fwd(p); puff(p.x-f[0]*1.8,p.y+1,p.z-f[2]*1.8,cbMe.hp<25&&Math.random()<.4?'fire':'dark',.6+Math.random()*.4,.9,0,1,0); }
+  const att=cbHost?foes.slice(0,cbN).filter(r=>r.st===0&&r.mode==='attack'&&r.tgt===SELF&&Math.hypot(r.x-p.x,r.y-p.y,r.z-p.z)<220):[];
+  if(alivePl&&att.some(r=>{ const dx=p.x-r.x, dy=p.y-r.y, dz=p.z-r.z, d=Math.hypot(dx,dy,dz); return (dx*r.f[0]+dy*r.f[1]+dz*r.f[2])/d>.96; })&&Math.sin(t*10)>-.2)
+    txt('⚠ BANDIT ON YOUR SIX · BREAK!',VW/2,VH*.28+80,20,'#ff4d5e','center',700);
+  if(!cbEngaged&&state==='race'&&alivePl) txt(p.gnd?'Take off · the bandits are waiting':'Bandits closing in…',VW/2,VH*.28+80,16,'#ffb35c','center',700);
+  if(p.crashed>0&&!cbCoop) txt('GAME OVER',VW/2,VH*.28+50,30,'#ff4d5e','center',700);
+  if(p.crashed>0&&cbCoop) txt('Back to the runway for repairs in '+Math.max(0,p.crashed).toFixed(1)+' s',VW/2,VH*.28+50,16,'#fff','center',600);
+  if(cbMe.repairT>0){ txt('🔧 REPAIRING · '+Math.ceil(cbMe.repairT)+' s',VW/2,VH/2-30,34,'#9fe8ff','center',700);
+    hx.fillStyle='rgba(255,255,255,.15)'; rr(hx,VW/2-120,VH/2-10,240,10,5); hx.fill(); hx.fillStyle='#9fe8ff'; rr(hx,VW/2-120,VH/2-10,240*(1-cbMe.repairT/CB_REPAIR),10,5); hx.fill(); }
+  else if(cbMe.safeT>0&&alivePl&&!p.gnd) txt('🛡 Fresh off the runway · '+Math.ceil(cbMe.safeT)+' s',VW/2,by-66,13,'#9fe8ff','center',700);
+  if(!cbMe.ammo&&!cbMe.msl&&alivePl&&state==='race') txt('OUT OF AMMO · fly through the ? boxes (pink on the map)',VW/2,by-66,14,'#ffb35c','center',700);
+  stallCues(p,t,VH*.28+110);
+  if(state==='countdown'){ const n=Math.ceil(countdown); if(n<=3){ const f=countdown-Math.floor(countdown); txt(String(n),VW/2,VH/2-40,90+f*30,'#ffd34d','center',700); }
+    else txt('GET READY',VW/2,VH/2-40,44,'#fff','center',700);
+    txt('Set your throttle · after GO, '+(invert?'pull back (↓)':'push up (↑)')+' to climb out · '+(isTouch?'USE':padId?'RB':'Space')+' guns, '+(isTouch?'MSL':padId?'LB':'X')+' missile',VW/2,VH/2+10,16,'rgba(255,255,255,.9)','center'); }
+  if(msg.t>0){ hx.globalAlpha=Math.min(1,msg.t*2); txt(msg.text,VW/2,VH*.28,VW<640?24:36,msg.color,'center',700); hx.globalAlpha=1; }
+  if(cbMenu) txt('Co-op: the fight goes on while this menu is open',VW/2,VH-20,12,'rgba(255,255,255,.7)','center');
+  if(stick.id!==null){ hx.strokeStyle='rgba(255,255,255,.5)'; hx.lineWidth=2; hx.beginPath(); hx.arc(stick.ox,stick.oy,60,0,7); hx.stroke();
+    hx.fillStyle='rgba(255,211,77,.6)'; hx.beginPath(); hx.arc(stick.ox+stick.x*60,stick.oy+stick.y*60,18,0,7); hx.fill(); }
+}
+
 // ================= UPDATE =================
 const camPos=new THREE.Vector3(), camLook=new THREE.Vector3(), camUp=new THREE.Vector3(0,1,0); let camInit=false, orbit=0;
 const _bm=new THREE.Matrix4(), _bv1=new THREE.Vector3(), _bv2=new THREE.Vector3(), _bv3=new THREE.Vector3();
@@ -1511,6 +2020,7 @@ function applyTrim(dir,dt){
 }
 function update(dt){
   const inp=readInput();
+  if(cbActive&&(cbMenu||cbMe.repairT>0||player.crashed>0)) Object.assign(inp,{steer:0,pitch:0,thr:0,rudder:0,trim:0,look:0});
   if(state==='paused'){ updateEngine(); return; }   // silences the engine while in the pause menu
   wind.dir+=Math.sin(simT*.05+1)*dt*.08; const wm=wind.mag+Math.sin(simT*.31)*1.2+Math.sin(simT*1.1)*.6;
   wind.x=Math.cos(wind.dir)*wm; wind.z=Math.sin(wind.dir)*wm;
@@ -1523,18 +2033,19 @@ function update(dt){
     if(liveActive&&liveRace) countdown=(liveRace.at-Date.now())/1000+dt;
     const prev=Math.ceil(countdown); countdown-=dt; const now=Math.ceil(countdown);
     if(now!==prev&&now>0&&now<=3) beep(440,.15,'square',.08);
-    if(countdown<=0){ state='race'; simT=0; if(ttActive) recStart(); beep(880,.4,'square',.1); rumble(.3,.3,150); say('GO!',1,'#7dffa0'); }
+    if(countdown<=0){ state='race'; simT=0; if(ttActive) recStart(); beep(880,.4,'square',.1); rumble(.3,.3,150); say('GO!',1,'#7dffa0'); if(cbActive) cbGo(); }
+    if(cbActive) cbUpdate(dt,inp);
   } else {
     simT+=dt;
-    for(const r of racers){ if(r.crashed>0) continue; if(r.ai||r.auto) aiControl(r,dt); else { r.steer=inp.steer; r.rudder=inp.rudder; r.brake=inp.brake; r.pcmd=inp.pitch; r.thr=clamp(r.thr+inp.thr*dt*.9,0,1); } physics(r,dt); }
+    for(const r of racers){ if(r.crashed>0) continue; if(r.cbBot) cbBotFly(r,dt); else if(r.ai||r.auto) aiControl(r,dt); else { r.steer=inp.steer; r.rudder=inp.rudder; r.brake=inp.brake; r.pcmd=inp.pitch; r.thr=clamp(r.thr+inp.thr*dt*.9,0,1); } physics(r,dt); }
     for(let i=0;i<racers.length;i++) for(let j=i+1;j<racers.length;j++){ const a=racers[i], b=racers[j]; if(a.air<.5||b.air<.5) continue;
       if(a.crashed>0||b.crashed>0) continue;
       const dx=b.x-a.x, dy=b.y-a.y, dz=b.z-a.z, d=Math.hypot(dx,dy,dz);
       if(d<4.5&&d>0){ const k=(4.5-d)/2/d; a.x-=dx*k; a.y-=dy*k; a.z-=dz*k; b.x+=dx*k; b.y+=dy*k; b.z+=dz*k; if((a===player||b===player)&&!player.auto) rumble(.3,.2,80); } }
     for(const r of racers){ if((r.ai||r.auto)&&state!=='free') aiItems(r,dt); plumes(r,dt); }
     if(state==='free') freeFlight(dt);
-    updateWeapons(dt);
-    if(state==='race'&&!player.auto){ const g=rings[player.passed%N], rx=player.x-g.x, rz=player.z-g.z;
+    if(cbActive) cbUpdate(dt,inp); else updateWeapons(dt);
+    if(state==='race'&&!player.auto&&!cbActive){ const g=rings[player.passed%N], rx=player.x-g.x, rz=player.z-g.z;
       const along=rx*g.nx+rz*g.nz, lat=Math.abs(rx*g.px+rz*g.pz); missed=(along>4&&along<110&&lat<MISS_LAT)?missed+dt:0; if(missed>1) missRing(player,g); } else missed=0;
     if(resultsTimer>0){ resultsTimer-=dt; if(resultsTimer<=0) showResults(); }
   }
@@ -1543,16 +2054,12 @@ function update(dt){
   if(msg.t>0) msg.t-=dt;
   updateBoxes(dt,performance.now()/1000); updatePuffs(dt);
   // sync meshes (left rudder swings the fin's trailing edge left)
-  for(const r of racers){ r.fin.rotation.y=(r.rudder||0)*.55; r.root.position.set(r.x,r.y,r.z); ensureAtt(r);
-    const f=r.f, u=r.u, z=vcross(f,u); _bm.makeBasis(_bv1.set(f[0],f[1],f[2]),_bv2.set(u[0],u[1],u[2]),_bv3.set(z[0],z[1],z[2]));
-    r.body.quaternion.setFromRotationMatrix(_bm);
-    if(!r.gnd) r.body.rotateZ(clamp(r.cDem||0,-.7,1.1)*.1);          // a hint of angle of attack under g
-    if(r.slowT>0) r.body.rotateX(Math.sin(simT*16+r.ph)*.35*Math.min(1,r.slowT)); }
+  for(const r of racers) syncMesh(r);
   if(ttActive&&state==='race') recSample();
   updateGhosts(dt); liveFrame(dt); if(split.t>0) split.t-=dt;
   // ring highlight
   const nx=(state==='title'||isFree())?-1:player.passed%N, t=performance.now()/1000;
-  rings.forEach((g,i)=>{ const m=g.mesh.material;
+  rings.forEach((g,i)=>{ const m=g.mesh.material; if(g.mesh.visible===cbActive){ g.mesh.visible=!cbActive; for(const b of g.buoys) b.visible=!cbActive; }
     if(i===nx){ m.emissive.set('#ffb000'); m.emissiveIntensity=.55+.35*Math.sin(t*6); if(i){ m.color.set('#ffd34d'); m.opacity=1; } const s=1+.04*Math.sin(t*6); g.mesh.scale.set(s,s,s); }
     else if(i===(nx+1)%N&&nx>=0){ m.emissive.set('#000000'); if(i){ m.color.set('#ffe9a8'); m.opacity=.8; } g.mesh.scale.set(1,1,1); }
     else { m.emissive.set('#000000'); if(i){ m.color.set('#ffffff'); m.opacity=.5; } g.mesh.scale.set(1,1,1); } });
@@ -1601,10 +2108,37 @@ function txt(s,x,y,size,color,align,weight){ hx.font=`${weight||600} ${size}px "
   hx.fillStyle='rgba(0,0,0,.45)'; hx.fillText(s,x+1.5,y+1.5); hx.fillStyle=color||'#fff'; hx.fillText(s,x,y); }
 function box(x,y,w,h){ hx.fillStyle='rgba(12,26,30,.5)'; rr(hx,x,y,w,h,10); hx.fill(); }
 const v3=new THREE.Vector3();
+// bottom: throttle / speed / altitude / G / trim / engine temp (race and combat)
+function bottomStrip(p,t){
+  const bw=Math.min(320,isTouch?VW-220:VW-40), bx=VW/2-bw/2, by=VH-(isTouch?118:58);
+  box(bx-12,by-48,bw+24,84);
+  const agl=Math.max(0,p.y-ground(p.x,p.z)-1);
+  { const n=p.gload??1, ts=trimSpeed(p.trim||0), tr=p.trim||0;
+    txt('G '+(n>=0?'+':'')+n.toFixed(1),bx,by-30,13,Math.abs(n)>5.2?'#ff4d5e':Math.abs(n)>3.5?'#ffd34d':'#fff','left',700);
+    txt('TRIM '+(Math.abs(tr)<.001?'NEUTRAL':(tr>0?'▲':'▼')+' '+(ts?Math.round(ts*3.6)+' km/h':'NEG G')),bx+bw,by-30,12,Math.abs(tr)<.001?'rgba(255,255,255,.7)':'#9fe8ff','right',700);
+    if(Math.abs(lookT)>.5) txt(lookT<0?'◀ LOOKING LEFT':'LOOKING RIGHT ▶',VW/2,by-30,12,'#ffd34d','center',700); }
+  txt('THR',bx,by-8,11,'rgba(255,255,255,.65)');
+  txt(Math.round(p.spd*3.6)+' km/h',bx+bw*.45,by-8,13,'#fff','center',700);
+  txt('ALT '+Math.round(agl)+' m',bx+bw,by-8,13,agl<4&&p.air>.5?'#ff9a7a':'#fff','right',700);
+  hx.fillStyle='rgba(255,255,255,.15)'; rr(hx,bx,by,bw,12,5); hx.fill();
+  hx.fillStyle='rgba(255,77,94,.35)'; rr(hx,bx+bw*HOT,by,bw*(1-HOT),12,4); hx.fill();
+  const tg=hx.createLinearGradient(bx,0,bx+bw,0); tg.addColorStop(0,'#7dffa0'); tg.addColorStop(.7,'#ffd34d'); tg.addColorStop(1,'#ff7a4a');
+  hx.fillStyle=tg; rr(hx,bx,by,Math.max(10,bw*p.thr),12,5); hx.fill();
+  if(p.overT>0){ hx.fillStyle='rgba(20,20,20,.55)'; rr(hx,bx,by,bw,12,5); hx.fill(); }
+  hx.strokeStyle='#ff4d5e'; hx.lineWidth=2; rr(hx,bx+bw*HOT,by-1,bw*(1-HOT),14,4); hx.stroke();
+  hx.fillStyle='#ff4d5e'; hx.fillRect(bx+bw*HOT-1,by-4,2,20);
+  const hy=by+18, hw=bw;
+  txt('TEMP',bx,hy+6,9,'rgba(255,255,255,.6)');
+  hx.fillStyle='rgba(255,255,255,.12)'; rr(hx,bx+34,hy,hw-34,6,3); hx.fill();
+  const hc=p.overT>0?'#ff4d5e':p.heat<.5?'#7ae8ff':p.heat<.8?'#ffd34d':'#ff4d5e';
+  if(!(p.heat>.8&&p.overT<=0&&Math.sin(t*14)<0)){ hx.fillStyle=hc; rr(hx,bx+34,hy,Math.max(6,(hw-34)*(p.overT>0?1:p.heat)),6,3); hx.fill(); }
+  return {bx,by,bw};
+}
 function drawHUD(t){
   hx.setTransform(DPR,0,0,DPR,0,0); hx.clearRect(0,0,VW,VH);
   if(state==='title') return;
   if(isFree()){ drawFreeHUD(t); liveNote(); return; }
+  if(cbActive){ drawCombatHUD(t); return; }
   const p=player, st=standings(), pos=ttActive?ttPos():liveActive?livePos():st.indexOf(p)+1, nPl=ttActive?ghosts.length+1:liveActive?1+Object.keys(liveSeen).length:racers.length;
   box(12,12,150,112);
   txt('POS',24,34,12,'rgba(255,255,255,.65)'); txt(pos+'/'+nPl,24,66,32,'#ffd34d','left',700);
@@ -1631,31 +2165,7 @@ function drawHUD(t){
   let ly=my+mh+22; const best=p.laps.length?Math.min(...p.laps):null;
   p.laps.forEach((l,i)=>{ txt(`L${i+1}  ${fmt(l)}`,VW-16,ly,14,l===best?'#7dffa0':'rgba(255,255,255,.9)','right'); ly+=18; });
   if(p.finish==null&&state==='race'&&p.passed>0) txt(`L${p.laps.length+1}  ${fmt(simT-p.lapStart)}`,VW-16,ly,14,'#ffd34d','right');
-  // bottom: throttle / speed / altitude
-  const bw=Math.min(320,isTouch?VW-220:VW-40), bx=VW/2-bw/2, by=VH-(isTouch?118:58);
-  box(bx-12,by-48,bw+24,84);
-  const agl=Math.max(0,p.y-ground(p.x,p.z)-1);
-  { const n=p.gload??1, ts=trimSpeed(p.trim||0), tr=p.trim||0;
-    txt('G '+(n>=0?'+':'')+n.toFixed(1),bx,by-30,13,Math.abs(n)>5.2?'#ff4d5e':Math.abs(n)>3.5?'#ffd34d':'#fff','left',700);
-    txt('TRIM '+(Math.abs(tr)<.001?'NEUTRAL':(tr>0?'▲':'▼')+' '+(ts?Math.round(ts*3.6)+' km/h':'NEG G')),bx+bw,by-30,12,Math.abs(tr)<.001?'rgba(255,255,255,.7)':'#9fe8ff','right',700);
-    if(Math.abs(lookT)>.5) txt(lookT<0?'◀ LOOKING LEFT':'LOOKING RIGHT ▶',VW/2,by-30,12,'#ffd34d','center',700); }
-
-  txt('THR',bx,by-8,11,'rgba(255,255,255,.65)');
-  txt(Math.round(p.spd*3.6)+' km/h',bx+bw*.45,by-8,13,'#fff','center',700);
-  txt('ALT '+Math.round(agl)+' m',bx+bw,by-8,13,agl<4&&p.air>.5?'#ff9a7a':'#fff','right',700);
-  hx.fillStyle='rgba(255,255,255,.15)'; rr(hx,bx,by,bw,12,5); hx.fill();
-  hx.fillStyle='rgba(255,77,94,.35)'; rr(hx,bx+bw*HOT,by,bw*(1-HOT),12,4); hx.fill();
-  const tg=hx.createLinearGradient(bx,0,bx+bw,0); tg.addColorStop(0,'#7dffa0'); tg.addColorStop(.7,'#ffd34d'); tg.addColorStop(1,'#ff7a4a');
-  hx.fillStyle=tg; rr(hx,bx,by,Math.max(10,bw*p.thr),12,5); hx.fill();
-  if(p.overT>0){ hx.fillStyle='rgba(20,20,20,.55)'; rr(hx,bx,by,bw,12,5); hx.fill(); }
-  hx.strokeStyle='#ff4d5e'; hx.lineWidth=2; rr(hx,bx+bw*HOT,by-1,bw*(1-HOT),14,4); hx.stroke();
-  hx.fillStyle='#ff4d5e'; hx.fillRect(bx+bw*HOT-1,by-4,2,20);
-  // engine temperature
-  const hy=by+18, hw=bw;
-  txt('TEMP',bx,hy+6,9,'rgba(255,255,255,.6)');
-  hx.fillStyle='rgba(255,255,255,.12)'; rr(hx,bx+34,hy,hw-34,6,3); hx.fill();
-  const hc=p.overT>0?'#ff4d5e':p.heat<.5?'#7ae8ff':p.heat<.8?'#ffd34d':'#ff4d5e';
-  if(!(p.heat>.8&&p.overT<=0&&Math.sin(t*14)<0)){ hx.fillStyle=hc; rr(hx,bx+34,hy,Math.max(6,(hw-34)*(p.overT>0?1:p.heat)),6,3); hx.fill(); }
+  const {bx,by,bw}=bottomStrip(p,t);
   if(state==='race'&&p.finish==null){
     if(p.overT>0) txt('OVERHEATED · COOLING '+p.overT.toFixed(1)+'s',VW/2,by-86,16,'#ff4d5e','center',700);
     else if(p.heat>.8&&Math.sin(t*10)>-.4) txt('ENGINE HOT · EASE OFF',VW/2,by-86,15,'#ff9a7a','center',700);
