@@ -1703,14 +1703,18 @@ function cbClearShots(){ for(const b of cbBullets) cbFreeBul(b); cbBullets.lengt
 function cbShoot(src,f,dir,spd,team,owner,err){
   let dx=dir[0]+(Math.random()-.5)*2*err, dy=dir[1]+(Math.random()-.5)*2*err, dz=dir[2]+(Math.random()-.5)*2*err; const l=Math.hypot(dx,dy,dz); dx/=l; dy/=l; dz/=l;
   const m=cbBulMesh(team==='me'?bulMat:team==='foe'?bulMatFoe:owner==='pal'?bulMatPal:bulMatFoe);
-  cbBullets.push({ m, x:src.x+f[0]*3, y:src.y+f[1]*3+.6, z:src.z+f[2]*3, vx:dx*CB_BUL_SP+f[0]*spd, vy:dy*CB_BUL_SP+f[1]*spd, vz:dz*CB_BUL_SP+f[2]*spd, team, owner, life:CB_BUL_LIFE });
+  const b={ m, x:src.x+f[0]*3, y:src.y+f[1]*3+.6, z:src.z+f[2]*3, vx:dx*CB_BUL_SP+f[0]*spd, vy:dy*CB_BUL_SP+f[1]*spd, vz:dz*CB_BUL_SP+f[2]*spd, team, owner, life:CB_BUL_LIFE };
+  cbBullets.push(b); return b;
 }
 function cbLockTarget(){ const f=fwd(player), c=Math.cos(CB_LOCK[0]*Math.PI/180); let best=null, bc=c;
   for(const o of cbFoeList()){ const dx=o.x-player.x, dy=o.y-player.y, dz=o.z-player.z, d=Math.hypot(dx,dy,dz); if(d<6||d>CB_LOCK[1]) continue;
     const cs=(dx*f[0]+dy*f[1]+dz*f[2])/d; if(cs>bc){ bc=cs; best=o; } } return best; }
-function cbGunAssist(){ const f=fwd(player), c=Math.cos(4*Math.PI/180); let best=null, bc=c;      // a little help: rounds bend onto a bandit within 4° of the nose
-  for(const o of cbFoeList()){ const dx=o.x-player.x, dy=o.y-player.y, dz=o.z-player.z, d=Math.hypot(dx,dy,dz); if(d<5||d>230) continue;
-    const L=cbLead(player,o,CB_BUL_SP), cs=vdot(L.dir,f); if(cs>bc){ bc=cs; best=L.dir; } } return best; }
+// Gun assist (2026-11-07, "too frustrating" without it): the bandit whose lead point is within CB_AIM.cone of the nose
+// (closest to the nose wins) gets the rounds aimed at its lead point, and each round then curves after it (CB_AIM.home rad/s).
+const CB_AIM = { cone:12, range:320, home:1.3, hitR:3.2 };
+function cbGunAssist(){ const f=fwd(player), c=Math.cos(CB_AIM.cone*Math.PI/180); let best=null, bc=c;
+  for(const o of cbFoeList()){ const dx=o.x-player.x, dy=o.y-player.y, dz=o.z-player.z, d=Math.hypot(dx,dy,dz); if(d<5||d>CB_AIM.range) continue;
+    const L=cbLead(player,o,CB_BUL_SP), cs=vdot(L.dir,f); if(cs>bc){ bc=cs; best={dir:L.dir,o,d:L.d,off:Math.acos(Math.min(1,cs))*180/Math.PI}; } } return best; }
 function cbFireMissile(){
   if(!cbMe.alive||player.crashed>0||cbMe.repairT>0||state!=='race') return;
   if(cbMe.msl<=0){ say('🚀 NO MISSILES · find a ? box',1,'#cccccc'); beep(200,.06,'square',.06); return; }
@@ -1794,7 +1798,7 @@ function cbUpdate(dt,inp){
   cbMe.firing=0;
   if(cbMe.burst>0){ if(!canFire) cbMe.burst=0; cbMe.burstT-=dt; cbMe.firing=1;
     while(cbMe.burstT<=0&&cbMe.burst>0&&cbMe.ammo>0){ cbMe.burst--; cbMe.ammo--; cbMe.burstT+=.06; const f=fwd(player), as=cbGunAssist();
-      cbShoot(player,f,as||f,player.spd,'me',SELF,.006); beep(1100+Math.random()*200,.035,'square',.05); rumble(.05,.25,40); }
+      const b=cbShoot(player,f,as?as.dir:f,player.spd,'me',SELF,.006); if(as) b.tgt=as.o; beep(1100+Math.random()*200,.035,'square',.05); rumble(.05,.25,40); }
     if(cbMe.burst<=0||cbMe.ammo<=0){ cbMe.burst=0; cbMe.gap=.14; } }
   // enemies (host)
   if(cbHost){ for(const r of foes.slice(0,cbN)){ if(r.st===2) continue;
@@ -1814,9 +1818,15 @@ function cbUpdate(dt,inp){
   if(cbCoop) cbRemoteFx(dt);
   // bullets
   const fl=cbFoeList();
-  for(let i=cbBullets.length-1;i>=0;i--){ const b=cbBullets[i]; b.life-=dt; const px=b.x, py=b.y, pz=b.z; b.x+=b.vx*dt; b.y+=b.vy*dt; b.z+=b.vz*dt;
+  for(let i=cbBullets.length-1;i>=0;i--){ const b=cbBullets[i]; b.life-=dt;
+    if(b.tgt){ const o=b.tgt; if(!(cbHost?o.st===0:o.vs===0&&o.root.visible)) b.tgt=null;      // assisted round: curve after its bandit
+      else { const sp=Math.hypot(b.vx,b.vy,b.vz), dx=o.x-b.x, dy=o.y+.8-b.y, dz=o.z-b.z, d=Math.hypot(dx,dy,dz)||1, tl=d/sp;
+        const lx=dx+(o.vx||0)*tl, ly=dy+(o.vy||0)*tl, lz=dz+(o.vz||0)*tl, l=Math.hypot(lx,ly,lz)||1, ux=b.vx/sp, uy=b.vy/sp, uz=b.vz/sp, cs=(lx*ux+ly*uy+lz*uz)/l;
+        if(cs<.5) b.tgt=null; else { const ang=Math.acos(Math.min(1,cs)), k=Math.min(1,CB_AIM.home*dt/Math.max(ang,1e-4));
+          let nx=ux+(lx/l-ux)*k, ny=uy+(ly/l-uy)*k, nz=uz+(lz/l-uz)*k; const nl=Math.hypot(nx,ny,nz)||1; b.vx=nx/nl*sp; b.vy=ny/nl*sp; b.vz=nz/nl*sp; } } }
+    const px=b.x, py=b.y, pz=b.z; b.x+=b.vx*dt; b.y+=b.vy*dt; b.z+=b.vz*dt;
     let dead=b.life<=0||b.y<ground(b.x,b.z);
-    if(!dead&&b.team==='me') for(const o of fl){ if(segDist(px,py,pz,b.x,b.y,b.z,o.x,o.y+.8,o.z)<2.6){ dead=true; cbMe.hitMark=.25; beep(1600,.03,'triangle',.06);
+    if(!dead&&b.team==='me') for(const o of fl){ if(segDist(px,py,pz,b.x,b.y,b.z,o.x,o.y+.8,o.z)<CB_AIM.hitR){ dead=true; cbMe.hitMark=.25; beep(1600,.03,'triangle',.06);
         if(cbHost) cbFoeHit(o,CB_MY_DMG,SELF); else { cbReportHit(o.idx,CB_MY_DMG); puff(o.x,o.y+1,o.z,'spark',.7,.3,0,2,0); } break; } }
     if(!dead&&b.team==='foe') for(const t of cbTgts){ if(t.gnd||t.safe) continue; if(segDist(px,py,pz,b.x,b.y,b.z,t.x,t.y+.8,t.z)<2.4){ dead=true;
         if(t.me) cbHurt(D.dmg,'SHOT DOWN'); else { cbSendDmg(t.id,D.dmg); puff(t.x,t.y+1,t.z,'spark',.6,.3,0,2,0); } break; } }
@@ -1976,8 +1986,14 @@ function drawCombatHUD(t){
     hx.save(); hx.translate(ax,ay); hx.rotate(an); hx.fillStyle='#ff4040'; hx.strokeStyle='rgba(0,0,0,.5)'; hx.lineWidth=2;
     hx.beginPath(); hx.moveTo(16,0); hx.lineTo(-9,-11); hx.lineTo(-4,0); hx.lineTo(-9,11); hx.closePath(); hx.fill(); hx.stroke(); hx.restore();
     txt('BANDIT '+Math.round(nd)+' m',ax-Math.cos(an)*34,ay-Math.sin(an)*34+5,12,'#ff8080','center',700); }
+  const ga=alivePl&&state==='race'?cbGunAssist():null;
+  if(ga){ const o=ga.o, tl=ga.d/(CB_BUL_SP+p.spd*.5); v3.set(o.x+(o.vx||0)*tl,o.y+.8+(o.vy||0)*tl,o.z+(o.vz||0)*tl).project(camera);
+    if(v3.z<1){ const X=(v3.x+1)/2*VW, Y=(1-v3.y)/2*VH, good=ga.off<5&&ga.d<240;
+      hx.strokeStyle=good?'#7dffa0':'#ffd34d'; hx.lineWidth=2; hx.beginPath(); hx.arc(X,Y,9,0,7); hx.stroke(); hx.fillStyle=hx.strokeStyle; hx.beginPath(); hx.arc(X,Y,2.5,0,7); hx.fill();
+      v3.set(o.x,o.y+.8,o.z).project(camera); if(v3.z<1){ hx.setLineDash([4,4]); hx.beginPath(); hx.moveTo((v3.x+1)/2*VW,(1-v3.y)/2*VH); hx.lineTo(X,Y); hx.stroke(); hx.setLineDash([]); }
+      if(good) txt(ga.d<240?'GUNS · ON TARGET':'',X,Y-16,11,'#7dffa0','center',700); } }
   if(alivePl&&state==='race'){ const f=fwd(p); v3.set(p.x+f[0]*90,p.y+f[1]*90+.8,p.z+f[2]*90).project(camera);
-    if(v3.z<1){ const cx=(v3.x+1)/2*VW, cy=(1-v3.y)/2*VH; hx.strokeStyle=cbMe.hitMark>0?'#7dffa0':'rgba(255,255,255,.85)'; hx.lineWidth=2; hx.beginPath(); hx.arc(cx,cy,18,0,7); hx.stroke();
+    if(v3.z<1){ const cx=(v3.x+1)/2*VW, cy=(1-v3.y)/2*VH; hx.strokeStyle=cbMe.hitMark>0||(ga&&ga.off<5&&ga.d<240)?'#7dffa0':'rgba(255,255,255,.85)'; hx.lineWidth=2; hx.beginPath(); hx.arc(cx,cy,18,0,7); hx.stroke();
       hx.beginPath(); hx.moveTo(cx-28,cy); hx.lineTo(cx-11,cy); hx.moveTo(cx+11,cy); hx.lineTo(cx+28,cy); hx.moveTo(cx,cy+11); hx.lineTo(cx,cy+28); hx.stroke();
       hx.fillStyle='#fff'; hx.beginPath(); hx.arc(cx,cy,2,0,7); hx.fill();
       if(cbMe.hitMark>0){ hx.strokeStyle='#7dffa0'; hx.lineWidth=2.5; for(const [a,b] of [[-1,-1],[1,-1],[1,1],[-1,1]]){ hx.beginPath(); hx.moveTo(cx+a*7,cy+b*7); hx.lineTo(cx+a*14,cy+b*14); hx.stroke(); } } }
