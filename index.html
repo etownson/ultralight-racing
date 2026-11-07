@@ -21,7 +21,7 @@
   .opt span.l{opacity:.6;font-size:13px;letter-spacing:1px;min-width:62px;text-align:right}
   button{font-family:inherit;font-size:17px;font-weight:700;letter-spacing:1px;color:#14201a;background:#ffd34d;border:0;border-radius:10px;padding:11px 22px;cursor:pointer}
   button.alt{background:rgba(255,255,255,.14);color:#fff}
-  button.mode{min-width:170px;padding:13px 22px;font-size:18px}
+  button.mode{min-width:118px;padding:12px 14px;font-size:15px}
   button:hover{filter:brightness(1.08)}
   .row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px}
   table{width:100%;border-collapse:collapse;font-size:14px;margin-top:16px}
@@ -61,7 +61,7 @@
   <div class="panel">
     <h1>ULTRALIGHT</h1>
     <div class="sub">RING RACING · FREE FLIGHT</div>
-    <div class="row modes" id="modeRow" style="margin:4px 0 14px"><button id="bRace" class="mode">🏁 RACE</button><button id="bFreeT" class="mode alt">✈ FREE FLIGHT</button></div>
+    <div class="row modes" id="modeRow" style="margin:4px 0 14px"><button id="bRace" class="mode">🏁 RACE</button><button id="bTT" class="mode alt">⏱ TIME TRIAL</button><button id="bLive" class="mode alt" style="display:none">👥 LIVE</button><button id="bFreeT" class="mode alt">✈ FREE FLIGHT</button></div>
     <div class="best" id="modeDesc" style="margin:-6px 0 12px"></div>
     <div class="opt"><span class="l">LEVEL</span><button class="alt" id="dL">◀</button><span class="v" id="dName">Normal</span><button class="alt" id="dR">▶</button></div>
     <div class="opt"><span class="l">PITCH</span><button class="alt" id="iL">◀</button><span class="v" id="iName">Up = climb</span><button class="alt" id="iR">▶</button></div>
@@ -82,6 +82,7 @@
     </table>
     <div id="padStatus" class="pad">🎮 No controller detected. Connect one and press any button.</div>
     <div id="bestLine" class="best"></div>
+    <div id="ttBoard" class="best" style="display:none"></div>
     <div class="hint">Race: fly through the rings in order. Grab the <b>?</b> boxes for a ⚡ boost, 🚀 lock-on missile, 🔫 bullet burst or 💣 mine.<br>The faster you fly, the wider you turn, so ease off before sharp corners. Throttle in the red zone heats the engine; overheat and it cuts out.<br>Flying: it's fully aerobatic. Left/right rolls the plane and the wings stay where you leave them (a little dihedral eases shallow banks back to level). Back stick pulls g, so loop it from about 100 km/h; push past neutral for negative g and inverted flight. Hands off, it settles at the trimmed speed; trim nose-up or nose-down to change that. Throttle sets climb or descent. Steep turns need back pressure; pull too hard when slow and it stalls. To recover, release back pressure, add power, and use opposite rudder in a spin. Hold a look button to glance out the side when lining up to land.<br>Free flight: no rivals to beat. Land anywhere, take off again, buzz the treetops, but trees and buildings wreck the plane.<br>Touch: drag on the left half to fly, ＋/－ throttle, USE for pickups.</div>
   </div>
 </div>
@@ -359,17 +360,360 @@ function makePlane(color,helm){
 // ================= RACE STATE =================
 const DIFFS=[{n:'Easy',t:[.35,.4,.45],cf:.88,cap:.8,sl:1.6},{n:'Normal',t:[.62,.7,.78],cf:.95,cap:.8,sl:1.2},{n:'Hard',t:[.95,1,1],cf:1,cap:1,sl:.5}];   // rivals: t cruise skill, cf corner push, cap throttle limit, sl sloppiness
 let diff=1, invert=true, swapSticks=false, titleMode='race';   // invert=true: standard airplane pitch (up = dive)
-try{ const v=localStorage.getItem('ulr3-diff'); if(v!==null&&+v>=0&&+v<3) diff=+v; invert=localStorage.getItem('ulr3-pitch')!=='climb'; swapSticks=localStorage.getItem('ulr3-sticks')==='1'; titleMode=localStorage.getItem('ulr3-mode')==='free'?'free':'race'; }catch(e){}
+try{ const v=localStorage.getItem('ulr3-diff'); if(v!==null&&+v>=0&&+v<3) diff=+v; invert=localStorage.getItem('ulr3-pitch')!=='climb'; swapSticks=localStorage.getItem('ulr3-sticks')==='1'; { const m=localStorage.getItem('ulr3-mode'); titleMode=m==='free'||m==='tt'?m:'race'; } }catch(e){}
 const PILOTS=[{name:'You',color:'#ffcf3a',helm:'#ffffff'},{name:'Dusty',color:'#ff6b5a',helm:'#ffd0e0'},{name:'Kite',color:'#4fb3ff',helm:'#fff6a8'},{name:'Maverick',color:'#b07cff',helm:'#c8ffd8'}];
-const racers = PILOTS.map(p => { const m=makePlane(p.color,p.helm); const tag=nameSprite(p.name,p.color); m.root.add(tag); return { ...p, ...m, tag }; });
-let player=racers[0], simT=0, state='title', prevState=null, countdown=0, resultsTimer=-1, missed=0;
+const ALL_RACERS = PILOTS.map(p => { const m=makePlane(p.color,p.helm); const tag=nameSprite(p.name,p.color); m.root.add(tag); return { ...p, ...m, tag }; });
+let racers=ALL_RACERS, player=racers[0], simT=0, state='title', prevState=null, countdown=0, resultsTimer=-1, missed=0;
 let wind={x:0,z:0,dir:0,mag:3}, msg={text:'',t:0,color:'#ffd34d'};
+
+
+// ================= REMOTE PLANES · GHOSTS · SHARED LEADERBOARD =================
+// A "remote plane" is drawn from position + attitude samples rather than by the physics. Time-trial ghosts replay
+// recorded runs through it; live multiplayer will feed it network snapshots the same way.
+const GHOST_DT = .2, GHOST_MAX_FRAMES = 3000*7;     // 5 samples/s, up to 10 minutes
+const _q1=new THREE.Quaternion(), _q2=new THREE.Quaternion();
+let ttActive=false, ghosts=[], rec=null, split={text:'',t:0,color:'#fff'};
+
+function makeRemoteMesh(name,color,helm){
+  const m=makePlane(color,helm), mats=[];
+  m.root.traverse(o=>{ if(o.isMesh){ o.castShadow=false; o.material=o.material.clone(); o.material.transparent=true; o.material.depthWrite=false;
+    const base=Math.min(o.material.opacity??1,.45); o.material.opacity=base; mats.push({m:o.material,base}); } });
+  const tag=nameSprite(name,color); m.root.add(tag); m.root.visible=false;
+  return { ...m, tag, mats, fade:1 };
+}
+function disposeRemote(g){ scene.remove(g.root);
+  g.root.traverse(o=>{ if(o.geometry) o.geometry.dispose(); if(o.material){ if(o.material.map) o.material.map.dispose(); o.material.dispose(); } }); }
+function fadeRemote(g,a){ if(Math.abs(a-g.fade)<.02) return; g.fade=a; for(const k of g.mats) k.m.opacity=k.base*a; }
+
+// --- compact run encoding: per sample x,y,z (dm) + quaternion (×32767), int16, base64 (~19 bytes per second of flight) ---
+function encRun(fr){ const a=new Int16Array(fr.length);
+  for(let i=0;i<fr.length;i++) a[i]=clamp(Math.round(i%7<3?fr[i]*10:fr[i]*32767),-32767,32767);
+  const b=new Uint8Array(a.buffer); let s=''; for(let i=0;i<b.length;i+=8190) s+=String.fromCharCode.apply(null,b.subarray(i,i+8190)); return btoa(s); }
+function decRun(s){ const bin=atob(s), b=new Uint8Array(bin.length&~1); for(let i=0;i<b.length;i++) b[i]=bin.charCodeAt(i);
+  const a=new Int16Array(b.buffer), n=a.length-a.length%7, f=new Float32Array(n);
+  for(let i=0;i<n;i++) f[i]=i%7<3?a[i]/10:a[i]/32767; return f; }
+const validRec = r => r && typeof r.t==='number' && isFinite(r.t) && r.t>30 && r.t<3600 && typeof r.run==='string' && r.run.length>100 && r.run.length<400000
+  && Array.isArray(r.splits) && r.splits.length<=N*LAPS+1 && r.splits.every(x=>typeof x==='number');
+
+// --- ghosts ---
+function makeGhost(rec,name,color,helm,isMe){
+  let f; try{ f=decRun(rec.run); }catch(e){ return null; } if(f.length<28) return null;
+  for(let i=0;i<f.length;i++) if(!isFinite(f[i])) return null;
+  const m=makeRemoteMesh(name,color,helm);
+  return { ...m, name, color, isMe:!!isMe, f, n:f.length/7, splits:rec.splits, finish:rec.t, laps:Array.isArray(rec.laps)?rec.laps.filter(x=>typeof x==='number'):[], x:0,y:0,z:0, passed:0 };
+}
+function clearGhosts(){ for(const g of ghosts) disposeRemote(g); ghosts=[]; }
+function poseGhost(g,t){
+  const n=g.n, f=g.f, s=clamp(t/GHOST_DT,0,n-1), i=Math.min(n-2,Math.floor(s)), u=s-i;
+  const P=(j,k)=>f[clamp(j,0,n-1)*7+k];
+  const cr=k=>{ const p0=P(i-1,k), p1=P(i,k), p2=P(i+1,k), p3=P(i+2,k);   // Catmull-Rom through the samples
+    return .5*(2*p1+(p2-p0)*u+(2*p0-5*p1+4*p2-p3)*u*u+(3*p1-p0-3*p2+p3)*u*u*u); };
+  g.x=cr(0); g.y=cr(1); g.z=cr(2);
+  _q1.set(P(i,3),P(i,4),P(i,5),P(i,6)).normalize(); _q2.set(P(i+1,3),P(i+1,4),P(i+1,5),P(i+1,6)).normalize(); _q1.slerp(_q2,u);
+  g.root.position.set(g.x,g.y,g.z); g.body.quaternion.copy(_q1);
+  let p=0; while(p<g.splits.length&&g.splits[p]<=t) p++; g.passed=p;
+}
+function ghostProgress(g){ if(g.passed>=N*LAPS+1) return 1e9-g.finish;
+  const r=rings[g.passed%N]; return g.passed+1-clamp(Math.hypot(r.x-g.x,r.y-g.y,r.z-g.z)/r.seg,0,1); }
+const ttPos = () => 1+ghosts.filter(g=>ghostProgress(g)>progress(player)).length;
+function updateGhosts(dt){
+  const on=ttActive&&(state==='countdown'||state==='race'||state==='results'||(state==='paused'&&prevState!=='free'));
+  for(const g of ghosts){
+    if(!on){ g.root.visible=false; continue; }
+    const t=state==='countdown'?0:simT; poseGhost(g,t);
+    g.root.visible = t<=(g.n-1)*GHOST_DT;
+    g.prop.rotation.x+=dt*80;
+    const d=Math.hypot(g.x-player.x,g.y-player.y,g.z-player.z); fadeRemote(g,clamp((d-3)/14,.25,1));   // fade when it's right on top of you
+  }
+}
+
+// --- recorder (player's own run, sampled on a fixed 0.2 s grid) ---
+function recStart(){ rec={fr:[],splits:[],next:0,prev:null}; }
+function recSample(){
+  if(!rec||rec.fr.length>=GHOST_MAX_FRAMES) return;
+  const p=player, q=p.body.quaternion, cur=[simT,p.x,p.y,p.z,q.x,q.y,q.z,q.w], pv=rec.prev||cur;
+  while(rec.next<=simT+1e-9&&rec.fr.length<GHOST_MAX_FRAMES){
+    const u=cur[0]>pv[0]?clamp((rec.next-pv[0])/(cur[0]-pv[0]),0,1):1;
+    _q1.set(pv[4],pv[5],pv[6],pv[7]); _q2.set(cur[4],cur[5],cur[6],cur[7]); _q1.slerp(_q2,u);
+    rec.fr.push(lerp(pv[1],cur[1],u),lerp(pv[2],cur[2],u),lerp(pv[3],cur[3],u),_q1.x,_q1.y,_q1.z,_q1.w);
+    rec.next+=GHOST_DT; }
+  rec.prev=cur;
+}
+function recSplit(){ if(!rec||!ttActive||player.finish!=null) return;
+  rec.splits.push(simT); const k=rec.splits.length-1;
+  const ref=ghosts[0]; if(!ref||k<1||ref.splits[k]==null) return;          // compare with the fastest ghost
+  const d=simT-ref.splits[k];
+  split={text:(d<0?'−':'+')+Math.abs(d).toFixed(2)+'  vs '+(ref.isMe?'your best':ref.name),t:2.2,color:d<0?'#7dffa0':'#ff9a7a'};
+}
+function buildRec(){ const r3=x=>Math.round(x*1000)/1000;
+  return { v:1, t:r3(player.finish), lap:r3(Math.min(...player.laps)), laps:player.laps.map(r3), splits:rec.splits.map(r3), dt:GHOST_DT, run:encRun(rec.fr), at:Date.now() }; }
+
+// --- local best ghost (works everywhere, no account needed) ---
+function loadLocalGhost(){ try{ const r=JSON.parse(localStorage.getItem('ulr3-ghost')||'null'); return validRec(r)?r:null; }catch(e){ return null; } }
+function saveLocalGhost(r){ try{ localStorage.setItem('ulr3-ghost',JSON.stringify(r)); return true; }catch(e){ return false; } }
+
+// --- shared leaderboard: one doc per pilot at tt/<their id>, everyone reads, each writes their own ---
+let DB=null, USER=null, myId=null, board=[], boardState='off', names={}, boardWritable=null;
+const shortName = s => { s=(s||'').trim().split(/\s+/)[0]||'Pilot'; return s.length>11?s.slice(0,10)+'…':s; };
+async function resolveNames(){ if(!USER||!board.length) return;
+  try{ const ps=await USER.profiles(board.map(b=>b.id)); for(const b of board){ const p=ps&&ps[b.id]; names[b.id]=shortName(p&&p.name); } }catch(e){}
+  refreshTitle(); }
+async function initShared(){
+  const c=window.claude; if(!c||typeof c.use!=='function') return;
+  try{ [DB,USER]=await Promise.all([c.use('db'),c.use('user')]); }catch(e){ DB=null; }
+  try{ myId=USER?await USER.id():null; }catch(e){ myId=null; }
+  if(!DB) return;
+  try{ const w=USER&&USER.can?await USER.can('data.write'):null; boardWritable=w===true?true:w===false?false:null; }catch(e){}
+  boardState='loading'; refreshTitle();
+  const to=setTimeout(()=>{ if(boardState==='loading'){ boardState='slow'; refreshTitle(); } },10000);
+  try{
+    DB.collection('tt').orderBy('t').limit(25).onSnapshot(s=>{
+      if(!s.metadata.fromCache) clearTimeout(to);
+      board=s.docs.filter(d=>d.exists).map(d=>({id:d.id,...d.data()})).filter(validRec);
+      boardState='ok'; refreshTitle(); resolveNames(); },
+      e=>{ clearTimeout(to); boardState='err'; refreshTitle(); });
+  }catch(e){ clearTimeout(to); boardState='err'; refreshTitle(); }
+}
+async function submitRun(r){
+  if(!DB||!myId) return 'off';
+  if(boardWritable===false) return 'readonly';
+  const mine=board.find(b=>b.id===myId); if(mine&&mine.t<=r.t) return 'slower';
+  try{ await DB.collection('tt').doc(myId).set(r); return 'ok'; }
+  catch(e){ if(e&&e.code==='unavailable'){ await new Promise(z=>setTimeout(z,600+Math.random()*900)); try{ await DB.collection('tt').doc(myId).set(r); return 'ok'; }catch(e2){} }
+    if(e&&(e.code==='invalid_argument'||e instanceof TypeError)){ boardWritable=false; return 'readonly'; } return 'err'; }
+}
+function pickGhosts(){
+  clearGhosts(); if(!ttActive) return;
+  const local=loadLocalGhost(), mine=board.find(b=>b.id===myId), list=[];
+  const me=(mine&&(!local||mine.t<local.t))?mine:local;
+  if(me) list.push([me,'Your best','#ffcf3a','#ffffff',true]);
+  const cols=[['#6fe3ff','#fff6a8'],['#ff7ad0','#c8ffd8']];
+  board.filter(b=>b.id!==myId).slice(0,2).forEach((b,i)=>list.push([b,names[b.id]||'Pilot',cols[i][0],cols[i][1],false]));
+  for(const [r,nm,c,h,isMe] of list){ const g=makeGhost(r,nm,c,h,isMe); if(g) ghosts.push(g); }
+  ghosts.sort((a,b)=>a.finish-b.finish);
+}
+function renderBoard(el){
+  el.textContent=''; if(titleMode==='live'){ el.style.display=''; renderLive(el); return; }
+  if(titleMode!=='tt'){ el.style.display='none'; return; } el.style.display='';
+  const line=(t,o)=>{ const d=document.createElement('div'); d.textContent=t; if(o) Object.assign(d.style,o); el.appendChild(d); return d; };
+  const local=loadLocalGhost();
+  line(local?`Your best ghost: ${fmt(local.t)} · lap ${fmt(local.lap)}`:'No ghost yet: finish a time trial to record one.',{marginBottom:'4px'});
+  if(boardState==='off') return;
+  if(boardState==='loading'){ line('Loading friends’ times…'); return; }
+  if(boardState==='slow'){ line('Friends’ leaderboard can’t be reached right now.'); return; }
+  if(boardState==='err'){ line('Friends’ leaderboard is unavailable.'); return; }
+  if(!board.length){ line('Friends’ leaderboard: no times posted yet.'); return; }
+  line('FRIENDS’ LEADERBOARD',{opacity:.6,fontSize:'11px',letterSpacing:'1px',marginTop:'6px'});
+  board.slice(0,5).forEach((b,i)=>{ const me=b.id===myId; line(`${i+1}. ${me?'You':(names[b.id]||'Pilot')}  ${fmt(b.t)}`,me?{color:'#ffd34d'}:null); });
+  const gs=[...(local||board.some(b=>b.id===myId)?['your best']:[]),...board.filter(b=>b.id!==myId).slice(0,2).map(b=>names[b.id]||'Pilot')];
+  if(gs.length) line('Ghosts you’ll race: '+gs.join(', '),{opacity:.6,fontSize:'11px',marginTop:'4px'});
+}
+function showTTResults(){
+  state='results';
+  const rows=[{name:'You',color:player.color,finish:player.finish,lap:Math.min(...player.laps),me:true},
+    ...ghosts.map(g=>({name:g.isMe?'Your best (ghost)':g.name+' (ghost)',color:g.color,finish:g.finish,lap:g.laps.length?Math.min(...g.laps):null}))]
+    .sort((a,b)=>a.finish-b.finish);
+  const pos=rows.findIndex(r=>r.me)+1;
+  $('resTitle').textContent='TIME TRIAL · '+fmt(player.finish);
+  const body=$('resBody'); body.textContent='';
+  rows.forEach((r,i)=>{ const tr=document.createElement('tr'); if(r.me) tr.className='me';
+    const td=t=>{ const c=document.createElement('td'); c.textContent=t; tr.appendChild(c); return c; };
+    td(ord(i+1)); const nm=td(''); const dot=document.createElement('span'); dot.className='dot'; dot.style.background=r.color; nm.appendChild(dot); nm.appendChild(document.createTextNode(r.name));
+    td(fmt(r.finish)); td(fmt(r.lap)); body.appendChild(tr); });
+  const run=buildRec(), local=loadLocalGhost(), notes=[];
+  if(!local||run.t<local.t){ notes.push(saveLocalGhost(run)?(local?'New personal best! Ghost saved.':'Ghost saved: race it next time.'):'Couldn’t save the ghost in this browser.'); }
+  else notes.push(`Your best: ${fmt(local.t)} (${'+'+(run.t-local.t).toFixed(2)} s).`);
+  if(pos===1&&ghosts.length) notes.unshift('You beat every ghost!');
+  const note=$('resNote'); note.textContent=notes.join(' ');
+  if(DB&&myId) submitRun(run).then(s=>{ if(state!=='results') return;
+    const m={ok:'Posted to the friends’ leaderboard.',slower:'',readonly:'Leaderboard is read-only for you (ask the game’s owner to invite you as an Editor).',err:'Couldn’t reach the leaderboard.',off:''}[s];
+    if(m) note.textContent=notes.join(' ')+' '+m; });
+  show('results',1); show('touch',0); show('hudBtns',0);
+}
+
+// ================= LIVE (room presence) =================
+// Each pilot's own browser runs their plane. ~15×/s we publish an absolute snapshot in our room *presence*
+// (presence is open to every admitted viewer, unlike event topics); everyone else draws us through the
+// remote-plane layer, ~120 ms behind real time, interpolating between snapshots. A race is announced in
+// presence too ({id, at: start time}); lobby members who see it start their own countdown to the same instant.
+const LIVE_HZ = 15, LIVE_DELAY = 120, LIVE_BUF = 48, LIVE_LEAD = 6000;
+const LIVE_COLORS = [['#ff6b5a','#ffd0e0'],['#4fb3ff','#fff6a8'],['#b07cff','#c8ffd8'],['#5fe08a','#ffffff'],['#ff9f43','#ffffff'],['#f368e0','#ffffff'],['#2ed1c4','#ffffff'],['#c9d64a','#ffffff']];
+let liveCanEmit=true, liveLastEmit=0, roomDiag={n:0,err:'',last:0,list:[],lobby:'?',named:'?',pings:0,pingFrom:new Set(),sent:0}, LR=null, ROOM=null, roomOK=false, liveActive=false, liveRace=null, liveSeen={}, liveLastSend=0, liveLastSent='', liveDirty=0, liveJoinedIds=new Set();
+const remotes = new Map();          // peer label -> remote pilot
+const hashStr = s => { let h=2166136261; for(let i=0;i<s.length;i++){ h^=s.charCodeAt(i); h=Math.imul(h,16777619); } return h>>>0; };
+const r2 = x => Math.round(x*100)/100, r4 = x => Math.round(x*10000)/10000;
+const isNum = x => typeof x==='number' && isFinite(x);
+
+function remoteName(rp){ if(rp.isMe) return 'You (other tab)'; return (rp.by&&names[rp.by])||rp.nick||'Pilot'; }
+async function resolveLiveNames(){ if(!USER) return; const ids=[...remotes.values()].map(r=>r.by).filter(b=>b&&!names[b]);
+  if(!ids.length) return; try{ const ps=await USER.profiles(ids); for(const id of ids){ const p=ps&&ps[id]; names[id]=shortName(p&&p.name); } }catch(e){}
+  for(const rp of remotes.values()) if(rp.mesh&&rp.meshName!==remoteName(rp)){ disposeRemote(rp.mesh); rp.mesh=null; }
+  if(state==='title') refreshTitle(); }
+
+function ensureMesh(rp){ if(rp.mesh) return rp.mesh;
+  const [c,h]=LIVE_COLORS[hashStr(rp.peer)%LIVE_COLORS.length]; rp.color=c; rp.meshName=remoteName(rp);
+  const m=makePlane(c,h), tag=nameSprite(rp.meshName,c); m.root.add(tag); m.root.visible=false;
+  rp.mesh={...m,tag,mats:[],fade:1}; return rp.mesh; }
+
+function onLivePeers(ch){
+  const now=Date.now();
+  roomDiag.n++; roomDiag.last=now; roomDiag.list=(ch.peers||[]).map(pe=>`${String(pe.peer||'?').slice(0,5)}:${pe.kind||'-'}${pe.isMe?' me':''}${pe.sameTab?' this-tab':''} m=${(pe.presence&&pe.presence.m)||'-'}`);
+  for(const pe of ch.peers){
+    if(!pe||pe.sameTab||pe.kind==='agent'||!pe.peer) continue;
+    ingest(pe.peer,pe.by,pe.isMe,pe.presence||{},now);
+  }
+  for(const pe of ch.left){ const rp=remotes.get(pe.peer); if(rp&&now-rp.heard>4000){ if(rp.mesh) disposeRemote(rp.mesh); remotes.delete(pe.peer); } }
+  if(ch.joined.length) resolveLiveNames();
+  liveDirty++;
+}
+// one pilot's state, from presence or from an 'st' message (whichever arrives)
+function ingest(peer,by,isMe,p,now){
+    if(!p||typeof p!=='object'||!p.m) return;
+    let rp=remotes.get(peer), fresh=!rp;
+    if(!rp){ rp={peer,by,isMe,buf:[],off:null,p:{},rx:[],mesh:null,heard:now,color:LIVE_COLORS[hashStr(peer)%LIVE_COLORS.length][0]}; remotes.set(peer,rp); }
+    if(isNum(p.t)&&isNum(rp.p.t)&&p.t<rp.p.t) return;          // older than what we have
+    rp.p=p; rp.heard=now; rp.by=by||rp.by; if(!rp.by&&typeof p.uid==='string') rp.by=p.uid; if(fresh) resolveLiveNames();
+    if(isNum(p.t)&&Array.isArray(p.s)&&p.s.length>=7&&p.s.every(isNum)&&(!rp.buf.length||p.t>rp.buf[rp.buf.length-1][0])){
+      rp.buf.push([p.t,...p.s.slice(0,9)]); if(rp.buf.length>LIVE_BUF) rp.buf.shift();
+      const d=now-p.t; rp.off = rp.off==null ? d : Math.min(d, rp.off+2);       // min one-way delay estimate, slowly relaxing
+      rp.rx.push([now,d]); while(rp.rx.length&&rp.rx[0][0]<now-2000) rp.rx.shift();
+    }
+    // a race announced by someone: join if we're in the lobby (or on a live results screen) and it hasn't started
+    const ra=p.ra;
+    if(ra&&typeof ra.id==='string'&&/^[a-z0-9]{4,16}$/.test(ra.id)&&isNum(ra.at)&&ra.at>now+1500&&ra.at<now+20000&&!liveJoinedIds.has(ra.id)
+       &&((state==='title'&&titleMode==='live')||(state==='results'&&liveActive))) startLiveRace({id:ra.id,at:ra.at});
+    liveDirty++;
+}
+function pruneRemotes(now){ for(const [k,rp] of remotes) if(now-rp.heard>8000){ if(rp.mesh) disposeRemote(rp.mesh); remotes.delete(k); liveDirty++; } }
+
+async function initLive(){
+  const c=window.claude; if(!c||typeof c.use!=='function') return;
+  try{ ROOM=await c.use('room'); }catch(e){ ROOM=null; } if(!ROOM) return;
+  // diagnostics on the lobby itself: who it lists, and whether event pings cross between tabs
+  try{ ROOM.onPeers(ch=>{ roomDiag.lobby=ch.peers.length; liveDirty++; },()=>{});
+    ROOM.on('ping',m=>{ if(!m.sameTab){ roomDiag.pings++; roomDiag.pingFrom.add(String(m.peer).slice(0,5)); liveDirty++; } },()=>{});
+    setInterval(()=>{ if(ROOM&&ROOM.connected()) ROOM.emit('ping',{t:Date.now()}).then(()=>roomDiag.sent++).catch(e=>{ roomDiag.err='ping: '+((e&&e.code)||e); }); },4000);
+  }catch(e){}
+  try{ ROOM.on('st',m=>{ if(!m||m.sameTab||m.kind==='agent') return; roomDiag.st=(roomDiag.st||0)+1; ingest(m.peer,m.by,m.isMe,m.data,Date.now()); },()=>{}); }catch(e){}
+  // live traffic goes through a named room (falls back to the lobby if joining fails)
+  let nr=null; try{ nr=await ROOM.join('ulr-live'); }catch(e){ roomDiag.err='join: '+((e&&e.code)||e); }
+  LR=nr||ROOM; roomDiag.via=nr?'named':'lobby';
+  try{
+    LR.onConnection(ok=>{ roomOK=ok; liveLastSent=''; if(state==='title') refreshTitle(); }, e=>{ roomOK=false; roomDiag.err='conn: '+((e&&e.code)||e); if(state==='title') refreshTitle(); });
+    LR.onPeers(ch=>{ roomDiag.named=ch.peers.length; onLivePeers(ch); }, e=>{ roomDiag.err='peers: '+((e&&e.code)||e); liveDirty++; });
+    setTimeout(()=>{ try{ const ps=LR.peers(); if(ps&&ps.length&&!roomDiag.n) onLivePeers({peers:ps,joined:ps,left:[],updated:[]}); }catch(e){} },3000);
+  }catch(e){ roomDiag.err='init: '+e; }
+}
+
+// who is racing with me / flying with me right now
+function sharesMyWorld(rp){ const m=rp.p&&rp.p.m;
+  if(isFree()) return m==='free';
+  if(liveActive&&liveRace) return rp.p.rid===liveRace.id&&(m==='race'||m==='results');
+  return false; }
+function livePose(rp,now){
+  const b=rp.buf; if(!b.length||rp.off==null) return false;
+  const tt=now-rp.off-LIVE_DELAY; let i=b.length-1;
+  while(i>0&&b[i-1][0]>tt) i--;
+  let A,B,u;
+  if(tt>=b[b.length-1][0]){ A=b[Math.max(0,b.length-2)]; B=b[b.length-1];             // past the newest: extrapolate a little
+    const span=B[0]-A[0]; u=span>0?1+Math.min(500,tt-B[0])/span:1; if(tt-B[0]>3000) return false; }
+  else if(i===0&&tt<b[0][0]){ A=B=b[0]; u=0; }
+  else { A=b[i-1]; B=b[i]; u=(tt-A[0])/Math.max(1,B[0]-A[0]); }
+  rp.x=A[1]+(B[1]-A[1])*u; rp.y=A[2]+(B[2]-A[2])*u; rp.z=A[3]+(B[3]-A[3])*u;
+  _q1.set(A[4],A[5],A[6],A[7]).normalize(); _q2.set(B[4],B[5],B[6],B[7]).normalize(); _q1.slerp(_q2,clamp(u,0,1));
+  rp.thr=B[9]??.5; return true;
+}
+function updateRemotes(dt){
+  const now=Date.now();
+  for(const rp of remotes.values()){
+    const on=sharesMyWorld(rp)&&livePose(rp,now);
+    if(!on){ if(rp.mesh) rp.mesh.root.visible=false; continue; }
+    const m=ensureMesh(rp); m.root.visible=true; m.root.position.set(rp.x,rp.y,rp.z); m.body.quaternion.copy(_q1); m.prop.rotation.x+=dt*(30+70*(rp.thr||.5));
+    if(liveActive&&liveRace){ const pr=rp.p.pr; const s=liveSeen[rp.peer]||(liveSeen[rp.peer]={});
+      s.name=remoteName(rp); s.color=rp.color; if(Array.isArray(pr)){ if(isNum(pr[0])) s.passed=pr[0]; if(isNum(pr[1])) s.finish=pr[1]; } s.x=rp.x; s.y=rp.y; s.z=rp.z; }
+  }
+}
+const liveRacing = () => [...remotes.values()].filter(rp=>liveActive&&liveRace&&rp.p.rid===liveRace.id&&rp.mesh&&rp.mesh.root.visible);
+function remoteProgress(s){ if(isNum(s.finish)) return 1e9-s.finish; const passed=s.passed|0, g=rings[passed%N];
+  return passed+1-clamp(Math.hypot(g.x-s.x,g.y-s.y,g.z-s.z)/g.seg,0,1); }
+const livePos = () => 1+Object.values(liveSeen).filter(s=>s.x!=null&&remoteProgress(s)>progress(player)).length;
+
+// publish my state
+function liveTick(){
+  if(!ROOM||!roomOK) return;
+  const now=Date.now();
+  const m = state==='title' ? (titleMode==='live'?'lobby':'title') : state==='paused' ? (prevState==='free'?'free':'race') : state==='countdown' ? 'race' : state;
+  const flying = (m==='free'||m==='race'||(m==='results'&&liveActive));
+  const q=player.body.quaternion;
+  const pt={ v:1, m, uid:myId||null, rid:liveActive&&liveRace?liveRace.id:null,
+    s: flying?[r2(player.x),r2(player.y),r2(player.z),r4(q.x),r4(q.y),r4(q.z),r4(q.w),r2(player.spd),r2(player.thr)]:null,
+    pr: liveActive?[player.passed, player.finish==null?null:Math.round(player.finish*1000)/1000]:null,
+    ra: liveRace&&liveRace.host&&liveRace.at>now-3000?{id:liveRace.id,at:liveRace.at}:null };
+  if(liveCanEmit&&(flying?now-liveLastEmit>=100:now-liveLastEmit>=2000)){ liveLastEmit=now;
+    ROOM.emit('st',{...pt,t:now}).then(()=>{ roomDiag.stSent=(roomDiag.stSent||0)+1; }).catch(e=>{ if(e&&e.code==='not_permitted') liveCanEmit=false; roomDiag.err='st: '+((e&&e.code)||e); }); }
+  const key=JSON.stringify({...pt,s:null}); if(flying?now-liveLastSend<1000/LIVE_HZ:key===liveLastSent) return;
+  liveLastSent=key; liveLastSend=now; pt.t=now;
+  LR.presence(pt).catch(e=>{ roomDiag.err='presence: '+((e&&e.code)||e)+' '+((e&&e.message)||''); liveDirty++; });
+}
+
+// lobby → race
+function liveAnnounce(){
+  if(!ROOM||!roomOK){ toast('👥 Not connected to the live lobby'); return; }
+  const id=Math.random().toString(36).slice(2,10).replace(/[^a-z0-9]/g,'')||'r'+Date.now()%1e6;
+  startLiveRace({id,at:Date.now()+LIVE_LEAD,host:true});
+}
+function startLiveRace(ra){
+  liveJoinedIds.add(ra.id); liveRace=ra; liveSeen={}; titleMode='live';
+  beginRace(); countdown=Math.max(.5,(ra.at-Date.now())/1000);
+  liveLastSent=''; liveTick();
+  say(ra.host?'👥 RACE ANNOUNCED · everyone in the lobby joins':'👥 JOINING LIVE RACE',2.4,'#9fe8ff');
+}
+function lobbyPilots(){ const now=Date.now(); return [...remotes.values()].filter(rp=>rp.p&&rp.p.m&&now-rp.heard<6000); }
+function renderLive(el){
+  const line=(t,o)=>{ const d=document.createElement('div'); d.textContent=t; if(o) Object.assign(d.style,o); el.appendChild(d); return d; };
+  if(!ROOM){ line('Live play isn’t available in this view.'); return; }
+  if(!roomOK){ line('Connecting to the live lobby…'); return; }
+  const ps=lobbyPilots(), now=Date.now();
+  line(ps.length?'PILOTS HERE':'Nobody else is here yet. Invite friends (by email) and have them open the game.',ps.length?{opacity:.6,fontSize:'11px',letterSpacing:'1px'}:null);
+  const where={lobby:'in the lobby',title:'on the menu',free:'free flying',race:'racing',results:'on results'};
+  for(const rp of ps){ const hz=rp.rx.length/2, d=rp.rx.length?Math.round(rp.rx.reduce((a,x)=>a+x[1],0)/rp.rx.length):null;
+    const stale=rp.buf.length&&now-rp.buf[rp.buf.length-1][0]-(rp.off||0)>3000;
+    line(`${remoteName(rp)} · ${where[rp.p.m]||'here'}`+(hz?` · ${hz.toFixed(0)} Hz · ~${d} ms`:'')+(stale?' · (quiet)':''),{color:rp.color}); }
+  const b=document.createElement('button'); b.textContent='🏁 START LIVE RACE'; b.style.marginTop='10px'; b.onclick=()=>liveAnnounce(); el.appendChild(b);
+  line('Starts a race for everyone in the lobby in 6 s (Enter / A works too). No AI, no pickups.',{opacity:.6,fontSize:'11px',marginTop:'6px'});
+  line(`diag v3 · st sent ${roomDiag.stSent||0}, heard ${roomDiag.st||0}${liveCanEmit?'':' (sending not permitted)'} · via ${roomDiag.via||'?'} · lobby lists ${roomDiag.lobby} · ${roomDiag.via||'live'} room lists ${roomDiag.named} · pings sent ${roomDiag.sent}, heard ${roomDiag.pings} from [${[...roomDiag.pingFrom].join(',')}] · connected ${LR&&LR.connected?LR.connected():'?'} · peer updates ${roomDiag.n}`+(roomDiag.last?` (last ${((now-roomDiag.last)/1000).toFixed(0)} s ago)`:'')+` · ${roomDiag.list.length} in room: ${roomDiag.list.join(' | ')}`+(roomDiag.err?` · ERR ${roomDiag.err}`:''),{opacity:.5,fontSize:'10px',marginTop:'6px',fontFamily:'monospace',wordBreak:'break-all'});
+}
+function showLiveResults(){
+  state='results';
+  const rows=[{name:'You',color:player.color,finish:player.finish,me:true,prog:progress(player),lap:player.laps.length?Math.min(...player.laps):null},
+    ...Object.values(liveSeen).map(s=>({name:s.name,color:s.color,finish:isNum(s.finish)?s.finish:null,prog:remoteProgress(s),passed:s.passed|0}))]
+    .sort((a,b)=>b.prog-a.prog);
+  const pos=rows.findIndex(r=>r.me)+1;
+  $('resTitle').textContent=pos===1?'👥 LIVE RACE · VICTORY!':'👥 LIVE RACE · '+ord(pos).toUpperCase();
+  const body=$('resBody'); body.textContent='';
+  rows.forEach((r,i)=>{ const tr=document.createElement('tr'); if(r.me) tr.className='me';
+    const td=t=>{ const c=document.createElement('td'); c.textContent=t; tr.appendChild(c); return c; };
+    td(r.finish!=null?ord(i+1):'—'); const nm=td(''); const dot=document.createElement('span'); dot.className='dot'; dot.style.background=r.color; nm.appendChild(dot); nm.appendChild(document.createTextNode(r.name));
+    td(r.finish!=null?fmt(r.finish):'lap '+Math.min(LAPS,Math.max(1,Math.floor(((r.passed|0)-1)/N)+1))+'…'); td(r.me?fmt(r.lap):''); body.appendChild(tr); });
+  $('resNote').textContent=rows.some(r=>r.finish==null)?'Still racing: times fill in as they finish. RACE AGAIN starts a new race for everyone here.':'RACE AGAIN starts a new race for everyone here.';
+  show('results',1); show('touch',0); show('hudBtns',0);
+}
+let liveResT=0;
+function liveFrame(dt){
+  liveTick(); updateRemotes(dt); pruneRemotes(Date.now());
+  if(state==='results'&&liveActive){ liveResT-=dt; if(liveResT<=0&&liveDirty){ liveResT=.5; liveDirty=0; showLiveResults(); } }
+  if(state==='title'&&titleMode==='live'){ liveResT-=dt; if(liveResT<=0){ liveResT=liveDirty?.5:1.5; liveDirty=0; refreshTitle(); } }
+}
+function liveNote(){ if(!ROOM) return; const n=[...remotes.values()].filter(rp=>rp.mesh&&rp.mesh.root.visible).length;
+  if(n) txt('👥 '+n+' other pilot'+(n>1?'s':'')+' flying',VW/2,VW<640?250:70,13,'#9fe8ff','center',700); }
 
 function setupRace(allAI){
   const slots=[[-118,-7],[-118,7],[-134,-7],[-134,7]],   // runway start, well behind the start ring
         order=[0,1,2,3].sort(()=>Math.random()-.5);
   const hd=Math.atan2(rw.dz,rw.dx);
-  racers.forEach((r,i)=>{
+  ttActive = !allAI && titleMode==='tt'; liveActive = !allAI && titleMode==='live' && !!liveRace; const solo=ttActive||liveActive;
+  racers = solo ? [player] : ALL_RACERS;
+  ALL_RACERS.forEach((r,i)=>{
     const [f,s]=slots[order[i]], x=P2[0][0]+rw.dx*f+rw.px*s, z=P2[0][1]+rw.dz*f+rw.pz*s;
     Object.assign(r,{ ai:i>0||allAI, auto:false, skill:i>0?DIFFS[diff].t[i-1]:1, x, z, y:rw.h+1, hd, pitch:0, pcmd:0, spd:0, thr:i===0?.85:0,
       steer:0, bank:0, air:0, passed:0, lapStart:0, laps:[], finish:null, lane:(Math.random()-.5)*5, vlane:(Math.random()-.5)*3, noise:0, recover:false, lastPass:0, satT:0, extendT:0, ph:Math.random()*10,
@@ -379,7 +723,9 @@ function setupRace(allAI){
   simT=0; missed=0; resultsTimer=-1; wind.dir=Math.random()*Math.PI*2; wind.mag=3;
   rings.forEach(r=>r.mesh.scale.set(1,1,1));
   clearProjectiles(); clearDebris();
-  racers.forEach(r=>{ r.root.visible=true; });
+  ALL_RACERS.forEach(r=>{ r.root.visible = !solo || r===player; });
+  if(solo){ const f=ttActive?-118:(Math.random()<.5?-118:-134), sd=ttActive?0:[-9,-3,3,9][Math.random()*4|0]; player.x=P2[0][0]+rw.dx*f+rw.px*sd; player.z=P2[0][1]+rw.dz*f+rw.pz*sd; }
+  rec=null; split.t=0; pickGhosts();
 }
 
 // ================= INPUT =================
@@ -498,10 +844,11 @@ function setMute(m){ muted=m; $('bMute').textContent=muted?'🔇':'🔊'; toast(
 // ================= STATES =================
 const show=(id,on)=>$(id).classList.toggle('hidden',!on);
 function goTitle(){ state='title'; setupRace(true); show('title',1); show('pause',0); show('results',0); show('hudBtns',0); show('touch',0); refreshTitle(); }
-function startRace(){ initAudio(); setupRace(false); state='countdown'; countdown=3.999;
+function startRace(){ if(titleMode==='live'){ liveAnnounce(); return; } beginRace(); }
+function beginRace(){ initAudio(); setupRace(false); state='countdown'; countdown=3.999;
   show('title',0); show('pause',0); show('results',0); show('hudBtns',1); show('touch',isTouch); document.querySelector('.tb.use').style.display=''; $('brakeBtn').style.display='none';
   savePrefs(); }
-function savePrefs(){ try{ localStorage.setItem('ulr3-diff',diff); localStorage.setItem('ulr3-pitch',invert?'dive':'climb'); localStorage.setItem('ulr3-sticks',swapSticks?'1':'0'); localStorage.setItem('ulr3-mode',titleMode); }catch(e){} }
+function savePrefs(){ try{ localStorage.setItem('ulr3-diff',diff); localStorage.setItem('ulr3-pitch',invert?'dive':'climb'); localStorage.setItem('ulr3-sticks',swapSticks?'1':'0'); localStorage.setItem('ulr3-mode',titleMode==='live'?'race':titleMode); }catch(e){} }
 function pauseGame(){ if(state!=='race'&&state!=='countdown'&&state!=='free') return; prevState=state; state='paused'; show('pause',1); $('freeHint').style.display=prevState==='free'?'block':'none'; }
 function resume(){ if(state!=='paused') return; state=prevState; show('pause',0); }
 let titleRow=0;
@@ -511,7 +858,7 @@ function onAction(a){
     if(a==='confirm') titleMode==='free' ? startFree(true) : startRace();
     else if(a==='free'){ titleMode='free'; startFree(true); }
     else if(a==='up'||a==='down'){ titleRow=(titleRow+(a==='up'?3:1))%4; refreshTitle(); beep(400,.04); }
-    else if(a==='left'||a==='right'){ if(titleRow===0) titleMode=titleMode==='race'?'free':'race'; else if(titleRow===1) diff=(diff+(a==='left'?2:1))%3; else if(titleRow===2) invert=!invert; else swapSticks=!swapSticks; refreshTitle(); beep(520,.05); }
+    else if(a==='left'||a==='right'){ if(titleRow===0){ const M=['race','tt',...(ROOM&&roomOK?['live']:[]),'free']; titleMode=M[(Math.max(0,M.indexOf(titleMode))+(a==='left'?M.length-1:1))%M.length]; } else if(titleRow===1) diff=(diff+(a==='left'?2:1))%3; else if(titleRow===2) invert=!invert; else swapSticks=!swapSticks; refreshTitle(); beep(520,.05); }
   } else if(state==='race'||state==='countdown'){ if(a==='pause') pauseGame(); else if((a==='confirm'||a==='fire')&&state==='race'&&!player.auto) useItem(player); }
   else if(state==='paused'){ if(a==='pause'||a==='confirm') resume(); else if(a==='back') goTitle(); }
   else if(state==='results'){ if(a==='confirm') startRace(); else if(a==='free') startFree(); else if(a==='back'||a==='pause') goTitle(); }
@@ -526,16 +873,18 @@ function refreshTitle(){
   const rows=[$('modeRow'),...document.querySelectorAll('.opt')];
   rows.forEach((el,i)=>{ el.style.outline=(padId&&i===titleRow)?'1px solid rgba(255,211,77,.5)':'none'; el.style.borderRadius='10px'; });
   $('modeRow').style.padding='6px';
-  $('bRace').classList.toggle('alt',titleMode!=='race'); $('bFreeT').classList.toggle('alt',titleMode!=='free');
-  $('modeDesc').textContent = titleMode==='race' ? '3 laps against 3 rival pilots · pickups · engine heat' : 'Take off from the runway and fly anywhere · land in any field · watch your engine temp';
+  $('bRace').classList.toggle('alt',titleMode!=='race'); $('bTT').classList.toggle('alt',titleMode!=='tt'); $('bLive').classList.toggle('alt',titleMode!=='live'); $('bLive').style.display=ROOM?'':'none'; $('bFreeT').classList.toggle('alt',titleMode!=='free');
+  $('modeDesc').textContent = titleMode==='race' ? '3 laps against 3 rival pilots · pickups · engine heat' : titleMode==='tt' ? '3 laps solo against the clock · race your best ghost'+(DB?' and friends’ fastest runs':'')+' · no pickups' : titleMode==='live' ? '👥 Race the friends who have the game open right now' : 'Take off from the runway and fly anywhere · land in any field · watch your engine temp';
   document.querySelectorAll('.opt').forEach(el=>{ el.style.borderRadius='10px'; el.style.padding='2px 6px'; });
-  const b=loadBest()[DIFFS[diff].n]; $('bestLine').textContent=b?`Your best on ${DIFFS[diff].n}: race ${fmt(b.race)} · lap ${fmt(b.lap)}`:'';
+  const b=loadBest()[DIFFS[diff].n]; $('bestLine').textContent=b&&titleMode==='race'?`Your best on ${DIFFS[diff].n}: race ${fmt(b.race)} · lap ${fmt(b.lap)}`:''; renderBoard($('ttBoard'));
 }
 $('dL').onclick=()=>{titleRow=1;onAction('left');}; $('dR').onclick=()=>{titleRow=1;onAction('right');};
 $('iL').onclick=$('iR').onclick=()=>{titleRow=2;onAction('right');};
 $('sL').onclick=$('sR').onclick=()=>{titleRow=3;onAction('right');};
 $('bRace').onclick=()=>{ titleMode='race'; startRace(); };
 $('bFreeT').onclick=()=>{ titleMode='free'; startFree(true); };
+$('bTT').onclick=()=>{ titleMode='tt'; startRace(); };
+$('bLive').onclick=()=>{ titleMode='live'; liveDirty++; refreshTitle(); };
 $('bResume').onclick=resume; $('bQuit').onclick=goTitle; $('bAgain').onclick=startRace; $('bFree').onclick=()=>startFree(false); $('bMenu').onclick=goTitle;
 $('bPause').onclick=()=>{ state==='paused'?resume():pauseGame(); }; $('bMute').onclick=()=>setMute(!muted);
 document.addEventListener('visibilitychange',()=>{ if(document.hidden) pauseGame(); });
@@ -659,6 +1008,7 @@ function physics(r,dt){
   if(Math.abs(r.z)>BZ){ r.z=Math.sign(r.z)*BZ; r.hd=-r.hd; r.spd*=.85; }
 }
 function passRing(r,g){
+  if(r===player&&ttActive) recSplit();
   r.passed++; r.lastPass=simT; r.straightIn=false; r.recover=false; const p=r.passed;
   if((p-1)%N===0 && r.finish==null){
     const done=(p-1)/N;
@@ -672,12 +1022,15 @@ function passRing(r,g){
 }
 function progress(r){ if(r.finish!=null) return 1e9-r.finish; const g=rings[r.passed%N]; return r.passed+1-clamp(Math.hypot(g.x-r.x,g.y-r.y,g.z-r.z)/g.seg,0,1); }
 const standings=()=>racers.slice().sort((a,b)=>progress(b)-progress(a));
-function playerFinished(){ player.auto=true; const pos=standings().indexOf(player)+1;
-  say(pos===1?'YOU WIN!':'FINISHED '+ord(pos).toUpperCase(),2.5,pos===1?'#7dffa0':'#ffd34d');
+function playerFinished(){ player.auto=true; const pos=ttActive?ttPos():liveActive?livePos():standings().indexOf(player)+1;
+  if(ttActive){ const lb=loadLocalGhost(), pb=!lb||player.finish<lb.t; say((pb?'NEW BEST ':'FINISH ')+fmt(player.finish),2.5,pb?'#7dffa0':'#ffd34d'); }
+  else say(pos===1?'YOU WIN!':'FINISHED '+ord(pos).toUpperCase(),2.5,pos===1?'#7dffa0':'#ffd34d');
   beep(523,.15,'triangle',.15); setTimeout(()=>beep(784,.3,'triangle',.15),160); rumble(.5,.8,400); resultsTimer=2.6; }
 function finishOthers(){ let guard=0; const dt=1/30, saved=simT;
   while(racers.some(r=>r.finish==null)&&guard<30*900){ simT+=dt; for(const r of racers) if(r.finish==null){ aiControl(r,dt); physics(r,dt); } guard++; } simT=saved; }
 function showResults(){
+  if(ttActive){ showTTResults(); return; }
+  if(liveActive){ showLiveResults(); return; }
   finishOthers(); state='results';
   const st=racers.slice().sort((a,b)=>(a.finish??1e9)-(b.finish??1e9)), pos=st.indexOf(player)+1;
   $('resTitle').textContent=pos===1?'VICTORY!':'YOU FINISHED '+ord(pos).toUpperCase();
@@ -734,10 +1087,10 @@ function rollItem(r){ const pos=standings().indexOf(r)+1;
   const w = pos===1 ? {boost:2,missile:1,bullets:3,mine:4} : pos===racers.length ? {boost:4,missile:4,bullets:2,mine:1} : {boost:3,missile:3,bullets:3,mine:2};
   let s=Math.random()*Object.values(w).reduce((a,b)=>a+b); for(const k in w){ s-=w[k]; if(s<=0) return k; } return 'boost'; }
 function updateBoxes(dt,t){
-  if(isFree()){ for(const b of boxes) b.m.visible=false; return; }
+  if(isFree()||ttActive||liveActive){ for(const b of boxes) b.m.visible=false; return; }
   for(const b of boxes){
     if(!b.active){ b.t-=dt; if(b.t<=0){ b.active=true; b.m.visible=true; b.m.scale.setScalar(.01); } continue; }
-    const sc=Math.min(1,b.m.scale.x+dt*3); b.m.scale.setScalar(sc);
+    b.m.visible=true; const sc=Math.min(1,b.m.scale.x+dt*3); b.m.scale.setScalar(sc);
     b.m.rotation.set(t*.7+b.ph,t*1.1+b.ph,0); b.m.position.y=b.y+Math.sin(t*2+b.ph)*.6;
     if(state==='countdown') continue;
     for(const r of racers){ if(r.finish!=null&&!r.ai) continue;
@@ -951,7 +1304,7 @@ function clearDebris(){ for(const d of debris) scene.remove(d.m); debris.length=
 function startFree(fromTitle){
   initAudio();
   if(fromTitle){ setupRace(false); savePrefs(); show('title',0); show('pause',0); respawn(player,true); }
-  state='free'; clearProjectiles(); clearDebris();
+  state='free'; ttActive=false; liveActive=false; clearGhosts(); clearProjectiles(); clearDebris();
   show('results',0); show('hudBtns',1); show('touch',isTouch); document.querySelector('.tb.use').style.display='none'; $('brakeBtn').style.display='';
   const p=player; Object.assign(p,{auto:false,ai:false,item:null,heat:0,overT:0,slowT:0,boostT:0,burst:0,crashed:0});
   p.root.visible=true; p.tag.visible=false;
@@ -1082,9 +1435,10 @@ function update(dt){
   if(state==='countdown'||state==='race'||state==='free') applyTrim(inp.trim,dt); else trimHold=-1;
   if(state==='countdown'){
     player.thr=clamp(player.thr+inp.thr*dt*.9,0,1);
+    if(liveActive&&liveRace) countdown=(liveRace.at-Date.now())/1000+dt;
     const prev=Math.ceil(countdown); countdown-=dt; const now=Math.ceil(countdown);
     if(now!==prev&&now>0&&now<=3) beep(440,.15,'square',.08);
-    if(countdown<=0){ state='race'; simT=0; beep(880,.4,'square',.1); rumble(.3,.3,150); say('GO!',1,'#7dffa0'); }
+    if(countdown<=0){ state='race'; simT=0; if(ttActive) recStart(); beep(880,.4,'square',.1); rumble(.3,.3,150); say('GO!',1,'#7dffa0'); }
   } else {
     simT+=dt;
     for(const r of racers){ if(r.crashed>0) continue; if(r.ai||r.auto) aiControl(r,dt); else { r.steer=inp.steer; r.rudder=inp.rudder; r.brake=inp.brake; r.pcmd=inp.pitch; r.thr=clamp(r.thr+inp.thr*dt*.9,0,1); } physics(r,dt); }
@@ -1109,6 +1463,8 @@ function update(dt){
     r.body.quaternion.setFromRotationMatrix(_bm);
     if(!r.gnd) r.body.rotateZ(clamp(r.cDem||0,-.7,1.1)*.1);          // a hint of angle of attack under g
     if(r.slowT>0) r.body.rotateX(Math.sin(simT*16+r.ph)*.35*Math.min(1,r.slowT)); }
+  if(ttActive&&state==='race') recSample();
+  updateGhosts(dt); liveFrame(dt); if(split.t>0) split.t-=dt;
   // ring highlight
   const nx=(state==='title'||isFree())?-1:player.passed%N, t=performance.now()/1000;
   rings.forEach((g,i)=>{ const m=g.mesh.material;
@@ -1163,10 +1519,10 @@ const v3=new THREE.Vector3();
 function drawHUD(t){
   hx.setTransform(DPR,0,0,DPR,0,0); hx.clearRect(0,0,VW,VH);
   if(state==='title') return;
-  if(isFree()){ drawFreeHUD(t); return; }
-  const p=player, st=standings(), pos=st.indexOf(p)+1;
+  if(isFree()){ drawFreeHUD(t); liveNote(); return; }
+  const p=player, st=standings(), pos=ttActive?ttPos():liveActive?livePos():st.indexOf(p)+1, nPl=ttActive?ghosts.length+1:liveActive?1+Object.keys(liveSeen).length:racers.length;
   box(12,12,150,112);
-  txt('POS',24,34,12,'rgba(255,255,255,.65)'); txt(pos+'/'+racers.length,24,66,32,'#ffd34d','left',700);
+  txt('POS',24,34,12,'rgba(255,255,255,.65)'); txt(pos+'/'+nPl,24,66,32,'#ffd34d','left',700);
   const lap=Math.min(LAPS,Math.max(1,Math.floor((p.passed-1)/N)+1));
   txt('LAP',96,34,12,'rgba(255,255,255,.65)'); txt(lap+'/'+LAPS,96,66,24,'#fff','left',700);
   // wind relative to heading (arrow up = tailwind)
@@ -1175,6 +1531,7 @@ function drawHUD(t){
   hx.rotate(wa-Math.PI/2); hx.fillStyle='#8fd3ff'; hx.beginPath(); hx.moveTo(12,0); hx.lineTo(-8,-6); hx.lineTo(-4,0); hx.lineTo(-8,6); hx.closePath(); hx.fill(); hx.restore();
   txt('WIND '+Math.round(wm*3.6)+' km/h',62,103,12,'#8fd3ff');
   txt(fmt(state==='countdown'?0:(p.finish??simT)),VW/2,VW<640?226:44,30,'#fff','center',700);
+  if(split.t>0){ hx.globalAlpha=Math.min(1,split.t*2); txt(split.text,VW/2,(VW<640?226:44)+24,17,split.color,'center',700); hx.globalAlpha=1; }
   // minimap
   const mw=Math.min(200,VW*.3), mh=mw*600/880, mx=VW-mw-12, my=12, sx=mw/880;
   const M=(x,z)=>[mx+(x+440)*sx, my+(z+300)*sx];
@@ -1182,6 +1539,8 @@ function drawHUD(t){
   hx.strokeStyle='rgba(255,255,255,.4)'; hx.lineWidth=2; hx.beginPath(); rings.forEach((g,i)=>{ const [X,Y]=M(g.x,g.z); i?hx.lineTo(X,Y):hx.moveTo(X,Y); }); hx.closePath(); hx.stroke();
   const ng=rings[p.passed%N]; { const [X,Y]=M(ng.x,ng.z); hx.fillStyle='#ffd34d'; hx.beginPath(); hx.arc(X,Y,4+Math.sin(t*6),0,7); hx.fill(); }
   for(const r of racers){ if(r===p) continue; const [X,Y]=M(r.x,r.z); hx.fillStyle=r.color; hx.beginPath(); hx.arc(X,Y,3.5,0,7); hx.fill(); }
+  for(const rp of remotes.values()){ if(!rp.mesh||!rp.mesh.root.visible) continue; const [X,Y]=M(rp.x,rp.z); hx.fillStyle=rp.color; hx.beginPath(); hx.arc(X,Y,3.5,0,7); hx.fill(); }
+  for(const g of ghosts){ if(!g.root.visible) continue; const [X,Y]=M(g.x,g.z); hx.globalAlpha=.6; hx.fillStyle=g.color; hx.beginPath(); hx.arc(X,Y,3,0,7); hx.fill(); hx.globalAlpha=1; }
   { const [X,Y]=M(p.x,p.z); hx.save(); hx.translate(X,Y); hx.rotate(p.hd); hx.fillStyle=p.color; hx.strokeStyle='#000'; hx.lineWidth=1;
     hx.beginPath(); hx.moveTo(7,0); hx.lineTo(-5,-5); hx.lineTo(-3,0); hx.lineTo(-5,5); hx.closePath(); hx.fill(); hx.stroke(); hx.restore(); }
   let ly=my+mh+22; const best=p.laps.length?Math.min(...p.laps):null;
@@ -1241,14 +1600,14 @@ function drawHUD(t){
     if(Math.abs(dy)>6&&dist<260){ const up=dy>0; txt((up?'▲ CLIMB ':'▼ DIVE ')+Math.round(Math.abs(dy))+' m',VW/2,by-40,15,up?'#9fe8ff':'#ffcf9a','center',700); }
   }
   // item slot
-  box(12,132,132,58);
+  if(!ttActive&&!liveActive){ box(12,132,132,58);
   txt('ITEM',24,150,11,'rgba(255,255,255,.65)');
   if(p.item){ const it=ITEMS[p.item]; const pulse=.85+.15*Math.sin(t*6);
     hx.save(); hx.globalAlpha=pulse; txt(it.icon,24,180,24,'#fff','left',700); hx.restore(); txt(it.name,58,176,14,'#ffb3e0','left',700);
     txt(isTouch?'tap USE':(padId?'LB / RB':'SPACE'),132,150,10,'rgba(255,255,255,.55)','right'); }
   else if(p.burst>0) txt('🔫 FIRING…',24,176,14,'#fff27a','left',700);
   else txt('fly through ?',24,176,13,'rgba(255,255,255,.4)');
-  if(p.boostT>0){ hx.fillStyle='#ffd34d'; rr(hx,24,183,96*(p.boostT/3.2),3,1.5); hx.fill(); }
+  if(p.boostT>0){ hx.fillStyle='#ffd34d'; rr(hx,24,183,96*(p.boostT/3.2),3,1.5); hx.fill(); } }
   // aiming sight + lock
   if(state==='race'&&(p.item==='missile'||p.item==='bullets')&&p.finish==null){
     const f=fwd(p); v3.set(p.x+f[0]*70,p.y+f[1]*70+.8,p.z+f[2]*70).project(camera);
@@ -1283,7 +1642,7 @@ function drawHUD(t){
 let last=performance.now();
 function frame(now){ const dt=Math.min(.05,(now-last)/1000); last=now;
   update(dt); renderer.render(scene,camera); drawHUD(now/1000); requestAnimationFrame(frame); }
-goTitle(); updatePadUI(); $('loading').remove();
+goTitle(); updatePadUI(); $('loading').remove(); initShared(); initLive();
 requestAnimationFrame(frame);
 })();
 </script>
