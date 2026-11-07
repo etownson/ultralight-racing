@@ -63,6 +63,8 @@
     <div class="sub">RING RACING · FREE FLIGHT</div>
     <div class="row modes" id="modeRow" style="margin:4px 0 14px"><button id="bRace" class="mode">🏁 RACE</button><button id="bTT" class="mode alt">⏱ TIME TRIAL</button><button id="bLive" class="mode alt" style="display:none">👥 LIVE</button><button id="bFreeT" class="mode alt">✈ FREE FLIGHT</button></div>
     <div class="best" id="modeDesc" style="margin:-6px 0 12px"></div>
+    <div class="opt"><span class="l">COURSE</span><button class="alt" id="cL">◀</button><span class="v" id="cName">Hump Day</span><button class="alt" id="cR">▶</button></div>
+    <div class="best" id="cTag" style="margin:-8px 0 8px;font-size:12px"></div>
     <div class="opt"><span class="l">LEVEL</span><button class="alt" id="dL">◀</button><span class="v" id="dName">Normal</span><button class="alt" id="dR">▶</button></div>
     <div class="opt"><span class="l">PITCH</span><button class="alt" id="iL">◀</button><span class="v" id="iName">Up = climb</span><button class="alt" id="iR">▶</button></div>
     <div class="opt"><span class="l">STICKS</span><button class="alt" id="sL">◀</button><span class="v" id="sName">L fly · R throttle</span><button class="alt" id="sR">▶</button></div>
@@ -131,10 +133,27 @@ const ord = n => n+(['th','st','nd','rd'][(n%100>10&&n%100<14)?0:(n%10<4?n%10:0)
 
 // ================= WORLD LAYOUT =================
 const S = 0.2;
-const RAW = [[700,2300],[1500,2450],[2300,2300],[3000,2450],[3500,2000],[3300,1350],[3550,700],[2900,450],[2200,800],[1700,1300],[1100,1000],[600,600],[250,1150],[500,1900]];
-const ALT = [14,22,34,26,44,28,50,40,24,14,32,48,30,18];   // ring height above ground
-const P2 = RAW.map(([x,y]) => [(x-2000)*S, (y-1400)*S]);
-const N = P2.length, RR = 10, TUBE = 1.0;
+// Courses (2026-11-07). All share the map, the runway and ring 0 (the start/finish ring over the runway); 14 rings each.
+// raw: plan coords (x, y) → world (x-2000)*S, (y-1400)*S · alt: ring height above ground.
+// Hump Day: avg turn 46°, max 96°, ring-to-ring climb avg 14 m, max 26 m.
+// Lazy Sunday: avg turn 29°, max 46°, climb avg 8 m, max 12 m (a smooth, flatter loop).
+// Manic Monday: avg turn 59°, max 108° (two hairpins), climb avg 18 m, max 30 m.
+const COURSES = [
+  { id:'lazy',  n:'Lazy Sunday',  tag:'gentle turns · easy climbs',
+    raw:[[700,2300],[1450,2425],[2200,2400],[2900,2325],[3425,2000],[3575,1450],[3450,900],[3000,525],[2350,475],[1700,650],[1100,600],[550,800],[300,1350],[350,1975]],
+    alt:[14,19,39,35,25,34,43,34,38,24,34,41,34,18] },
+  { id:'hump',  n:'Hump Day',     tag:'the classic',
+    raw:[[700,2300],[1500,2450],[2300,2300],[3000,2450],[3500,2000],[3300,1350],[3550,700],[2900,450],[2200,800],[1700,1300],[1100,1000],[600,600],[250,1150],[500,1900]],
+    alt:[14,22,34,26,44,28,50,40,24,14,32,48,30,18] },
+  { id:'manic', n:'Manic Monday', tag:'tight turns · big climbs & dives',
+    raw:[[700,2300],[1450,2450],[2150,2325],[2800,2475],[3450,2250],[3025,1675],[3550,1250],[3500,550],[2750,850],[2200,475],[1625,875],[950,500],[300,850],[550,1700]],
+    alt:[14,23,45,23,51,29,45,53,31,52,20,51,31,22] } ];
+const DEFAULT_COURSE = 1;
+const courseOf = id => { const i=COURSES.findIndex(C=>C.id===id); return i<0?DEFAULT_COURSE:i; };
+let course = DEFAULT_COURSE;
+const toP2 = raw => raw.map(([x,y]) => [(x-2000)*S, (y-1400)*S]);
+const P2 = toP2(COURSES[DEFAULT_COURSE].raw);     // Hump Day: fixes the runway frame and the start (ring 0 is the same on every course)
+const N = 14, RR = 10, TUBE = 1.0;
 const WATER_Y = 2;
 const riverZ = x => 6 + 22*Math.sin(x*0.007+0.4) + 9*Math.sin(x*0.019+1.0);
 
@@ -158,13 +177,15 @@ function height(x,z){
 }
 const ground = (x,z) => Math.max(height(x,z), WATER_Y);
 
-const rings = P2.map((p,i) => {
-  const a = P2[(i-1+N)%N], b = P2[(i+1)%N];
-  let nx=b[0]-a[0], nz=b[1]-a[1]; const l=Math.hypot(nx,nz); nx/=l; nz/=l;
-  const y = ground(p[0],p[1]) + ALT[i];
-  return { x:p[0], y, z:p[1], nx, nz, px:-nz, pz:nx, seg:0, mesh:null };
-});
-rings.forEach((r,i) => { const q=rings[(i-1+N)%N]; r.seg=Math.hypot(r.x-q.x,r.y-q.y,r.z-q.z); });
+const rings = Array.from({length:N}, () => ({ x:0, y:0, z:0, nx:1, nz:0, px:0, pz:1, seg:1, mesh:null, buoys:[] }));
+function layoutRings(ci){   // geometry only; meshes and pickup boxes follow in applyCourse()
+  const C=COURSES[ci], P=toP2(C.raw);
+  rings.forEach((r,i) => { const p=P[i], a=P[(i-1+N)%N], b=P[(i+1)%N];
+    let nx=b[0]-a[0], nz=b[1]-a[1]; const l=Math.hypot(nx,nz); nx/=l; nz/=l;
+    Object.assign(r, { x:p[0], y:ground(p[0],p[1])+C.alt[i], z:p[1], nx, nz, px:-nz, pz:nx }); });
+  rings.forEach((r,i) => { const q=rings[(i-1+N)%N]; r.seg=Math.hypot(r.x-q.x,r.y-q.y,r.z-q.z); });
+}
+layoutRings(DEFAULT_COURSE);
 // Turning circle grows fast with airspeed: slow down for corners.
 const HOT = 0.85, PHI_MAX = .85, TURN_G = 9.8*Math.tan(PHI_MAX);   // max bank ~49°
 // fastest speed whose banked-turn radius V²/(g·tanφ) fits a given radius
@@ -209,6 +230,7 @@ addEventListener('resize', resize); resize();
 const lam = (c,o={}) => new THREE.MeshLambertMaterial({ color:c, flatShading:true, ...o });
 
 // ---------- Terrain ----------
+const allRingXZ=COURSES.flatMap(C=>toP2(C.raw));   // keep trees and houses clear of every course's rings
 const treeGrid=new Map(), houseCols=[];   // scenery colliders (used in free flight)
 const gkey=(x,z)=>Math.floor(x/20)+','+Math.floor(z/20);
 (function buildTerrain(){
@@ -255,7 +277,7 @@ const gkey=(x,z)=>Math.floor(x/20)+','+Math.floor(z/20);
   const spots=[];
   const ok=(x,z)=>{ const h=height(x,z); if(h<WATER_Y+1.5||h>60) return false;
     const u=(x-rw.cx)*rw.dx+(z-rw.cz)*rw.dz, v=(x-rw.cx)*rw.px+(z-rw.cz)*rw.pz; if(u>-(rw.half+25)&&u<rw.half+125&&Math.abs(v)<rw.w+22) return false;
-    for(const r of rings) if(Math.hypot(r.x-x,r.z-z)<16) return false; return true; };
+    for(const r of allRingXZ) if(Math.hypot(r[0]-x,r[1]-z)<16) return false; return true; };
   for(const f of fields){
     if(R()<.5) for(let k=f.x;k<f.x+f.w;k+=4+R()*6) if(ok(k,f.z)) spots.push([k,f.z+(R()-.5)*1.5,.7+R()*.5]);
     if(R()<.4) for(let k=f.z;k<f.z+f.d;k+=4+R()*6) if(ok(f.x,k)) spots.push([f.x+(R()-.5)*1.5,k,.7+R()*.5]);
@@ -321,11 +343,14 @@ const ringShadowGeo = new THREE.CircleGeometry(1,24).rotateX(-Math.PI/2);
 rings.forEach((r,i)=>{
   const mat = i===0 ? new THREE.MeshLambertMaterial({ map:checkerTex(), emissive:'#000000' })
                     : new THREE.MeshLambertMaterial({ color:'#ffffff', emissive:'#000000', transparent:true, opacity:.55 });
-  const mesh=new THREE.Mesh(ringGeo, mat); mesh.position.set(r.x,r.y,r.z); mesh.rotation.y=Math.atan2(r.nx,r.nz); mesh.castShadow=true;
+  const mesh=new THREE.Mesh(ringGeo, mat); mesh.castShadow=true;
   scene.add(mesh); r.mesh=mesh;
   // little balloon-ish buoys on each side for cuteness
-  for(const s of [-1,1]){ const b=new THREE.Mesh(new THREE.SphereGeometry(1.3,12,8), lam(i===0?'#ffffff':'#ff8a3d')); b.position.set(r.x+r.px*s*(RR+1.2), r.y, r.z+r.pz*s*(RR+1.2)); b.castShadow=true; scene.add(b); }
+  for(const s of [-1,1]){ const b=new THREE.Mesh(new THREE.SphereGeometry(1.3,12,8), lam(i===0?'#ffffff':'#ff8a3d')); b.castShadow=true; b.userData.s=s; scene.add(b); r.buoys.push(b); }
 });
+function placeRingMeshes(){ for(const r of rings){ r.mesh.position.set(r.x,r.y,r.z); r.mesh.rotation.y=Math.atan2(r.nx,r.nz);
+  for(const b of r.buoys){ const s=b.userData.s; b.position.set(r.x+r.px*s*(RR+1.2), r.y, r.z+r.pz*s*(RR+1.2)); } } }
+placeRingMeshes();
 const fx=[]; // expanding ring flashes
 function flashRing(r,color){ const m=new THREE.Mesh(ringGeo,new THREE.MeshBasicMaterial({color,transparent:true,opacity:.9,depthWrite:false})); m.position.copy(r.mesh.position); m.rotation.copy(r.mesh.rotation); scene.add(m); fx.push({m,t:0}); }
 
@@ -364,8 +389,8 @@ const DIFFS=[{n:'Easy',t:[.35,.4,.45],cf:.88,cap:.8,sl:1.6},{n:'Normal',t:[.62,.
 // ti sharp pilot (turn-in judged on the ring, firewall throttle, height planned by gradient, 5 s miss penalty instead of teardrop),
 // phi bank limit rad (~74°), tim turn-in margin, pm final-approach distance flown on the path to ring height, cg climb gradient
 // before slowing to climb speed vcl, vsu max climb m/s, co climb-out speed off the runway; vc cruise × (unused, 1)
-let diff=1, invert=true, swapSticks=false, titleMode='race';   // invert=true: standard airplane pitch (up = dive)
-try{ const v=localStorage.getItem('ulr3-diff'); if(v!==null&&+v>=0&&+v<3) diff=+v; invert=localStorage.getItem('ulr3-pitch')!=='climb'; swapSticks=localStorage.getItem('ulr3-sticks')==='1'; { const m=localStorage.getItem('ulr3-mode'); titleMode=m==='free'||m==='tt'?m:'race'; } }catch(e){}
+let diff=1, invert=true, swapSticks=false, titleMode='race', savedCourse=DEFAULT_COURSE;   // invert=true: standard airplane pitch (up = dive)
+try{ const v=localStorage.getItem('ulr3-diff'); if(v!==null&&+v>=0&&+v<3) diff=+v; invert=localStorage.getItem('ulr3-pitch')!=='climb'; swapSticks=localStorage.getItem('ulr3-sticks')==='1'; { const m=localStorage.getItem('ulr3-mode'); titleMode=m==='free'||m==='tt'?m:'race'; } savedCourse=courseOf(localStorage.getItem('ulr3-course')); }catch(e){}
 const PILOTS=[{name:'You',color:'#ffcf3a',helm:'#ffffff'},{name:'Dusty',color:'#ff6b5a',helm:'#ffd0e0'},{name:'Kite',color:'#4fb3ff',helm:'#fff6a8'},{name:'Maverick',color:'#b07cff',helm:'#c8ffd8'}];
 const ALL_RACERS = PILOTS.map(p => { const m=makePlane(p.color,p.helm); const tag=nameSprite(p.name,p.color); m.root.add(tag); return { ...p, ...m, tag }; });
 let racers=ALL_RACERS, player=racers[0], simT=0, state='title', prevState=null, countdown=0, resultsTimer=-1, missed=0;
@@ -451,11 +476,13 @@ function recSplit(){ if(!rec||!ttActive||player.finish!=null) return;
   split={text:(d<0?'−':'+')+Math.abs(d).toFixed(2)+'  vs '+(ref.isMe?'your best':ref.name),t:2.2,color:d<0?'#7dffa0':'#ff9a7a'};
 }
 function buildRec(){ const r3=x=>Math.round(x*1000)/1000;
-  return { v:1, t:r3(player.finish), lap:r3(Math.min(...player.laps)), laps:player.laps.map(r3), splits:rec.splits.map(r3), dt:GHOST_DT, run:encRun(rec.fr), at:Date.now() }; }
+  return { v:1, t:r3(player.finish), lap:r3(Math.min(...player.laps)), laps:player.laps.map(r3), splits:rec.splits.map(r3), dt:GHOST_DT, run:encRun(rec.fr), at:Date.now(), c:cid() }; }
 
 // --- local best ghost (works everywhere, no account needed) ---
-function loadLocalGhost(){ try{ const r=JSON.parse(localStorage.getItem('ulr3-ghost')||'null'); return validRec(r)?r:null; }catch(e){ return null; } }
-function saveLocalGhost(r){ try{ localStorage.setItem('ulr3-ghost',JSON.stringify(r)); return true; }catch(e){ return false; } }
+const cid = () => COURSES[course].id, hump = () => cid()==='hump';
+const ghostKey = () => hump() ? 'ulr3-ghost' : 'ulr3-ghost-'+cid();
+function loadLocalGhost(){ try{ const r=JSON.parse(localStorage.getItem(ghostKey())||'null'); return validRec(r)&&(r.c||'hump')===cid()?r:null; }catch(e){ return null; } }
+function saveLocalGhost(r){ try{ localStorage.setItem(ghostKey(),JSON.stringify(r)); return true; }catch(e){ return false; } }
 
 // --- shared leaderboard: one doc per pilot at tt/<their id>, everyone reads, each writes their own ---
 let DB=null, USER=null, myId=null, board=[], boardState='off', names={}, boardWritable=null;
@@ -469,22 +496,31 @@ async function initShared(){
   try{ myId=USER?await USER.id():null; }catch(e){ myId=null; }
   if(!DB) return;
   try{ const w=USER&&USER.can?await USER.can('data.write'):null; boardWritable=w===true?true:w===false?false:null; }catch(e){}
-  boardState='loading'; refreshTitle();
-  const to=setTimeout(()=>{ if(boardState==='loading'){ boardState='slow'; refreshTitle(); } },10000);
+  subscribeBoard();
+}
+// one leaderboard per course: tt (Hump Day, as before), tt-lazy, tt-manic
+const boardCol = () => hump() ? 'tt' : 'tt-'+cid();
+let boardUnsub=null, boardGen=0;
+function subscribeBoard(){
+  if(!DB) return; try{ if(boardUnsub) boardUnsub(); }catch(e){} boardUnsub=null;
+  const gen=++boardGen; board=[]; boardState='loading'; refreshTitle();
+  const to=setTimeout(()=>{ if(gen===boardGen&&boardState==='loading'){ boardState='slow'; refreshTitle(); } },10000);
   try{
-    DB.collection('tt').orderBy('t').limit(25).onSnapshot(s=>{
+    const u=DB.collection(boardCol()).orderBy('t').limit(25).onSnapshot(s=>{ if(gen!==boardGen) return;
       if(!s.metadata.fromCache) clearTimeout(to);
       board=s.docs.filter(d=>d.exists).map(d=>({id:d.id,...d.data()})).filter(validRec);
       boardState='ok'; refreshTitle(); resolveNames(); },
-      e=>{ clearTimeout(to); boardState='err'; refreshTitle(); });
+      e=>{ if(gen!==boardGen) return; clearTimeout(to); boardState='err'; refreshTitle(); });
+    boardUnsub=typeof u==='function'?u:(u&&typeof u.unsubscribe==='function'?()=>u.unsubscribe():null);
   }catch(e){ clearTimeout(to); boardState='err'; refreshTitle(); }
 }
 async function submitRun(r){
   if(!DB||!myId) return 'off';
   if(boardWritable===false) return 'readonly';
   const mine=board.find(b=>b.id===myId); if(mine&&mine.t<=r.t) return 'slower';
-  try{ await DB.collection('tt').doc(myId).set(r); return 'ok'; }
-  catch(e){ if(e&&e.code==='unavailable'){ await new Promise(z=>setTimeout(z,600+Math.random()*900)); try{ await DB.collection('tt').doc(myId).set(r); return 'ok'; }catch(e2){} }
+  const col=boardCol();
+  try{ await DB.collection(col).doc(myId).set(r); return 'ok'; }
+  catch(e){ if(e&&e.code==='unavailable'){ await new Promise(z=>setTimeout(z,600+Math.random()*900)); try{ await DB.collection(col).doc(myId).set(r); return 'ok'; }catch(e2){} }
     if(e&&(e.code==='invalid_argument'||e instanceof TypeError)){ boardWritable=false; return 'readonly'; } return 'err'; }
 }
 function pickGhosts(){
@@ -592,7 +628,7 @@ function ingest(peer,by,isMe,p,now){
     // a race announced by someone: join if we're in the lobby (or on a live results screen) and it hasn't started
     const ra=p.ra;
     if(ra&&typeof ra.id==='string'&&/^[a-z0-9]{4,16}$/.test(ra.id)&&isNum(ra.at)&&ra.at>now+1500&&ra.at<now+20000&&!liveJoinedIds.has(ra.id)
-       &&((state==='title'&&titleMode==='live')||(state==='results'&&liveActive))) startLiveRace({id:ra.id,at:ra.at});
+       &&((state==='title'&&titleMode==='live')||(state==='results'&&liveActive))) startLiveRace({id:ra.id,at:ra.at,c:typeof ra.c==='string'?ra.c:'hump'});
     liveDirty++;
 }
 function pruneRemotes(now){ for(const [k,rp] of remotes) if(now-rp.heard>8000){ if(rp.mesh) disposeRemote(rp.mesh); remotes.delete(k); liveDirty++; } }
@@ -659,7 +695,7 @@ function liveTick(){
   const pt={ v:1, m, uid:myId||null, rid:liveActive&&liveRace?liveRace.id:null,
     s: flying?[r2(player.x),r2(player.y),r2(player.z),r4(q.x),r4(q.y),r4(q.z),r4(q.w),r2(player.spd),r2(player.thr)]:null,
     pr: liveActive?[player.passed, player.finish==null?null:Math.round(player.finish*1000)/1000]:null,
-    ra: liveRace&&liveRace.host&&liveRace.at>now-3000?{id:liveRace.id,at:liveRace.at}:null };
+    ra: liveRace&&liveRace.host&&liveRace.at>now-3000?{id:liveRace.id,at:liveRace.at,c:liveRace.c}:null, c:cid() };
   if(liveCanEmit&&(flying?now-liveLastEmit>=100:now-liveLastEmit>=2000)){ liveLastEmit=now;
     ROOM.emit('st',{...pt,t:now}).then(()=>{ roomDiag.stSent=(roomDiag.stSent||0)+1; }).catch(e=>{ if(e&&e.code==='not_permitted') liveCanEmit=false; roomDiag.err='st: '+((e&&e.code)||e); }); }
   const key=JSON.stringify({...pt,s:null}); if(flying?now-liveLastSend<1000/LIVE_HZ:key===liveLastSent) return;
@@ -671,13 +707,14 @@ function liveTick(){
 function liveAnnounce(){
   if(!ROOM||!roomOK){ toast('👥 Not connected to the live lobby'); return; }
   const id=Math.random().toString(36).slice(2,10).replace(/[^a-z0-9]/g,'')||'r'+Date.now()%1e6;
-  startLiveRace({id,at:Date.now()+LIVE_LEAD,host:true});
+  startLiveRace({id,at:Date.now()+LIVE_LEAD,host:true,c:cid()});
 }
 function startLiveRace(ra){
   liveJoinedIds.add(ra.id); liveRace=ra; liveSeen={}; titleMode='live';
+  applyCourse(courseOf(ra.c));           // everyone races the host's course
   beginRace(); countdown=Math.max(.5,(ra.at-Date.now())/1000);
   liveLastSent=''; liveTick();
-  say(ra.host?'👥 RACE ANNOUNCED · everyone in the lobby joins':'👥 JOINING LIVE RACE',2.4,'#9fe8ff');
+  say((ra.host?'👥 RACE ANNOUNCED · everyone in the lobby joins':'👥 JOINING LIVE RACE')+' · '+COURSES[course].n.toUpperCase(),2.4,'#9fe8ff');
 }
 function lobbyPilots(){ const now=Date.now(); return [...remotes.values()].filter(rp=>rp.p&&rp.p.m&&now-rp.heard<6000); }
 function renderLive(el){
@@ -689,9 +726,10 @@ function renderLive(el){
   const where={lobby:'in the lobby',title:'on the menu',free:'free flying',race:'racing',results:'on results'};
   for(const rp of ps){ const hz=rp.rx.length/2, d=rp.rx.length?Math.round(rp.rx.reduce((a,x)=>a+x[1],0)/rp.rx.length):null;
     const stale=rp.buf.length&&now-rp.buf[rp.buf.length-1][0]-(rp.off||0)>3000;
-    line(`${remoteName(rp)} · ${where[rp.p.m]||'here'}`+(hz?` · ${hz.toFixed(0)} Hz · ~${d} ms`:'')+(stale?' · (quiet)':''),{color:rp.color}); }
+    const pc=COURSES.find(C=>C.id===rp.p.c);
+    line(`${remoteName(rp)} · ${where[rp.p.m]||'here'}`+(pc&&(rp.p.m==='lobby'||rp.p.m==='race'||rp.p.m==='results')?` · ${pc.n}`:'')+(hz?` · ${hz.toFixed(0)} Hz · ~${d} ms`:'')+(stale?' · (quiet)':''),{color:rp.color}); }
   const b=document.createElement('button'); b.textContent='🏁 START LIVE RACE'; b.style.marginTop='10px'; b.onclick=()=>liveAnnounce(); el.appendChild(b);
-  line('Starts a race for everyone in the lobby in 6 s (Enter / A works too). No AI, no pickups.',{opacity:.6,fontSize:'11px',marginTop:'6px'});
+  line(`Starts a race on ${COURSES[course].n} for everyone in the lobby in 6 s (Enter / A works too). No AI, no pickups.`,{opacity:.6,fontSize:'11px',marginTop:'6px'});
   line(`diag v3 · st sent ${roomDiag.stSent||0}, heard ${roomDiag.st||0}${liveCanEmit?'':' (sending not permitted)'} · via ${roomDiag.via||'?'} · lobby lists ${roomDiag.lobby} · ${roomDiag.via||'live'} room lists ${roomDiag.named} · pings sent ${roomDiag.sent}, heard ${roomDiag.pings} from [${[...roomDiag.pingFrom].join(',')}] · connected ${LR&&LR.connected?LR.connected():'?'} · peer updates ${roomDiag.n}`+(roomDiag.last?` (last ${((now-roomDiag.last)/1000).toFixed(0)} s ago)`:'')+` · ${roomDiag.list.length} in room: ${roomDiag.list.join(' | ')}`+(roomDiag.err?` · ERR ${roomDiag.err}`:''),{opacity:.5,fontSize:'10px',marginTop:'6px',fontFamily:'monospace',wordBreak:'break-all'});
 }
 function showLiveResults(){
@@ -859,7 +897,7 @@ function startRace(){ if(titleMode==='live'){ liveAnnounce(); return; } beginRac
 function beginRace(){ initAudio(); setupRace(false); state='countdown'; countdown=3.999;
   show('title',0); show('pause',0); show('results',0); show('hudBtns',1); show('touch',isTouch); document.querySelector('.tb.use').style.display=''; $('brakeBtn').style.display='none';
   savePrefs(); }
-function savePrefs(){ try{ localStorage.setItem('ulr3-diff',diff); localStorage.setItem('ulr3-pitch',invert?'dive':'climb'); localStorage.setItem('ulr3-sticks',swapSticks?'1':'0'); localStorage.setItem('ulr3-mode',titleMode==='live'?'race':titleMode); }catch(e){} }
+function savePrefs(){ try{ localStorage.setItem('ulr3-diff',diff); localStorage.setItem('ulr3-pitch',invert?'dive':'climb'); localStorage.setItem('ulr3-sticks',swapSticks?'1':'0'); localStorage.setItem('ulr3-mode',titleMode==='live'?'race':titleMode); localStorage.setItem('ulr3-course',COURSES[course].id); }catch(e){} }
 function pauseGame(){ if(state!=='race'&&state!=='countdown'&&state!=='free') return; prevState=state; state='paused'; show('pause',1); $('freeHint').style.display=prevState==='free'?'block':'none'; }
 function resume(){ if(state!=='paused') return; state=prevState; show('pause',0); }
 let titleRow=0;
@@ -868,13 +906,14 @@ function onAction(a){
   if(state==='title'){
     if(a==='confirm') titleMode==='free' ? startFree(true) : startRace();
     else if(a==='free'){ titleMode='free'; startFree(true); }
-    else if(a==='up'||a==='down'){ titleRow=(titleRow+(a==='up'?3:1))%4; refreshTitle(); beep(400,.04); }
-    else if(a==='left'||a==='right'){ if(titleRow===0){ const M=['race','tt',...(ROOM&&roomOK?['live']:[]),'free']; titleMode=M[(Math.max(0,M.indexOf(titleMode))+(a==='left'?M.length-1:1))%M.length]; } else if(titleRow===1) diff=(diff+(a==='left'?2:1))%3; else if(titleRow===2) invert=!invert; else swapSticks=!swapSticks; refreshTitle(); beep(520,.05); }
+    else if(a==='up'||a==='down'){ titleRow=(titleRow+(a==='up'?4:1))%5; refreshTitle(); beep(400,.04); }
+    else if(a==='left'||a==='right'){ if(titleRow===0){ const M=['race','tt',...(ROOM&&roomOK?['live']:[]),'free']; titleMode=M[(Math.max(0,M.indexOf(titleMode))+(a==='left'?M.length-1:1))%M.length]; } else if(titleRow===1){ if(applyCourse((course+(a==='left'?COURSES.length-1:1))%COURSES.length)) setupRace(true); savePrefs(); } else if(titleRow===2) diff=(diff+(a==='left'?2:1))%3; else if(titleRow===3) invert=!invert; else swapSticks=!swapSticks; refreshTitle(); beep(520,.05); }
   } else if(state==='race'||state==='countdown'){ if(a==='pause') pauseGame(); else if((a==='confirm'||a==='fire')&&state==='race'&&!player.auto) useItem(player); }
   else if(state==='paused'){ if(a==='pause'||a==='confirm') resume(); else if(a==='back') goTitle(); }
   else if(state==='results'){ if(a==='confirm') startRace(); else if(a==='free') startFree(); else if(a==='back'||a==='pause') goTitle(); }
   else if(state==='free'){ if(a==='pause') pauseGame(); else if(a==='reset') respawn(player,true); else if(a==='confirm'&&player.crashed>0) respawn(player,true); }
 }
+const bestKey = () => hump() ? DIFFS[diff].n : cid()+':'+DIFFS[diff].n;
 function loadBest(){ try{ return JSON.parse(localStorage.getItem('ulr3-best')||'{}'); }catch(e){ return {}; } }
 function refreshTitle(){
   $('dName').textContent=DIFFS[diff].n; $('iName').textContent=invert?'Up = dive':'Up = climb';
@@ -887,11 +926,13 @@ function refreshTitle(){
   $('bRace').classList.toggle('alt',titleMode!=='race'); $('bTT').classList.toggle('alt',titleMode!=='tt'); $('bLive').classList.toggle('alt',titleMode!=='live'); $('bLive').style.display=ROOM?'':'none'; $('bFreeT').classList.toggle('alt',titleMode!=='free');
   $('modeDesc').textContent = titleMode==='race' ? '3 laps against 3 rival pilots · pickups · engine heat' : titleMode==='tt' ? 'One-lap runs, back to the runway after each · race your best ghost'+(DB?' and friends’ fastest runs':'')+' · no pickups' : titleMode==='live' ? '👥 Race the friends who have the game open right now' : 'Take off from the runway and fly anywhere · land in any field · watch your engine temp';
   document.querySelectorAll('.opt').forEach(el=>{ el.style.borderRadius='10px'; el.style.padding='2px 6px'; });
-  const b=loadBest()[DIFFS[diff].n]; $('bestLine').textContent=b&&titleMode==='race'?`Your best on ${DIFFS[diff].n}: race ${fmt(b.race)} · lap ${fmt(b.lap)}`:''; renderBoard($('ttBoard'));
+  const b=loadBest()[bestKey()]; $('bestLine').textContent=b&&titleMode==='race'?`Your best on ${COURSES[course].n} · ${DIFFS[diff].n}: race ${fmt(b.race)} · lap ${fmt(b.lap)}`:'';
+  $('cName').textContent=COURSES[course].n; $('cTag').textContent=COURSES[course].tag; renderBoard($('ttBoard'));
 }
-$('dL').onclick=()=>{titleRow=1;onAction('left');}; $('dR').onclick=()=>{titleRow=1;onAction('right');};
-$('iL').onclick=$('iR').onclick=()=>{titleRow=2;onAction('right');};
-$('sL').onclick=$('sR').onclick=()=>{titleRow=3;onAction('right');};
+$('cL').onclick=()=>{titleRow=1;onAction('left');}; $('cR').onclick=()=>{titleRow=1;onAction('right');};
+$('dL').onclick=()=>{titleRow=2;onAction('left');}; $('dR').onclick=()=>{titleRow=2;onAction('right');};
+$('iL').onclick=$('iR').onclick=()=>{titleRow=3;onAction('right');};
+$('sL').onclick=$('sR').onclick=()=>{titleRow=4;onAction('right');};
 $('bRace').onclick=()=>{ titleMode='race'; startRace(); };
 $('bFreeT').onclick=()=>{ titleMode='free'; startFree(true); };
 $('bTT').onclick=()=>{ titleMode='tt'; startRace(); };
@@ -1067,11 +1108,11 @@ function showResults(){
   const st=racers.slice().sort((a,b)=>(a.finish??1e9)-(b.finish??1e9)), pos=st.indexOf(player)+1;
   $('resTitle').textContent=pos===1?'VICTORY!':'YOU FINISHED '+ord(pos).toUpperCase();
   $('resBody').innerHTML=st.map((r,i)=>`<tr class="${r===player?'me':''}"><td>${ord(i+1)}</td><td><span class="dot" style="background:${r.color}"></span>${r.name}</td><td>${fmt(r.finish)}</td><td>${fmt(r.laps.length?Math.min(...r.laps):null)}</td></tr>`).join('');
-  const bl=Math.min(...player.laps), all=loadBest(), k=DIFFS[diff].n, prev=all[k]||{}, notes=[];
+  const bl=Math.min(...player.laps), all=loadBest(), k=bestKey(), prev=all[k]||{}, notes=[];
   if(!prev.race||player.finish<prev.race){ if(prev.race) notes.push('New personal best race time!'); prev.race=player.finish; }
   if(!prev.lap||bl<prev.lap){ if(prev.lap) notes.push('New personal best lap!'); prev.lap=bl; }
   all[k]=prev; try{ localStorage.setItem('ulr3-best',JSON.stringify(all)); }catch(e){}
-  $('resNote').textContent=(notes.join(' ')?notes.join(' ')+' ':'')+`Difficulty: ${k}. Best: race ${fmt(prev.race)} · lap ${fmt(prev.lap)}`;
+  $('resNote').textContent=(notes.join(' ')?notes.join(' ')+' ':'')+`${COURSES[course].n} · ${DIFFS[diff].n}. Best: race ${fmt(prev.race)} · lap ${fmt(prev.lap)}`;
   show('results',1); show('touch',0); show('hudBtns',0);
 }
 
@@ -1112,9 +1153,15 @@ function boxTex(){ const cv=document.createElement('canvas'); cv.width=cv.height
   const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; return t; }
 const boxGeo=new THREE.BoxGeometry(2.8,2.8,2.8), boxMat=new THREE.MeshLambertMaterial({map:boxTex(),emissive:'#ffffff',emissiveIntensity:.18});
 const boxes=[];
-[0,2,4,6,8,10,12].forEach(i=>{ const a=rings[i], b=rings[(i+1)%N]; let dx=b.x-a.x, dz=b.z-a.z; const l=Math.hypot(dx,dz); dx/=l; dz/=l;
-  for(const o of [-9,0,9]){ const x=(a.x+b.x)/2-dz*o, z=(a.z+b.z)/2+dx*o, y=Math.max((a.y+b.y)/2, ground(x,z)+6);
-    const m=new THREE.Mesh(boxGeo,boxMat); m.position.set(x,y,z); m.castShadow=true; scene.add(m); boxes.push({x,y,z,m,active:true,t:0,ph:Math.random()*6}); } });
+function placeBoxes(){ let k=0;
+  [0,2,4,6,8,10,12].forEach(i=>{ const a=rings[i], b=rings[(i+1)%N]; let dx=b.x-a.x, dz=b.z-a.z; const l=Math.hypot(dx,dz); dx/=l; dz/=l;
+    for(const o of [-9,0,9]){ const x=(a.x+b.x)/2-dz*o, z=(a.z+b.z)/2+dx*o, y=Math.max((a.y+b.y)/2, ground(x,z)+6);
+      let bx=boxes[k++]; if(!bx){ const m=new THREE.Mesh(boxGeo,boxMat); m.castShadow=true; scene.add(m); bx={m,ph:Math.random()*6}; boxes.push(bx); }
+      Object.assign(bx,{x,y,z,active:true,t:0}); bx.m.position.set(x,y,z); bx.m.scale.setScalar(1); } }); }
+placeBoxes();
+// switch course: rings, meshes, AI corner speeds, pickups, ghosts/leaderboard for that course
+function applyCourse(ci){ ci=clamp(ci|0,0,COURSES.length-1); if(ci===course) return false;
+  course=ci; layoutRings(ci); computeCornerSpeeds(); placeRingMeshes(); placeBoxes(); subscribeBoard(); return true; }
 function rollItem(r){ const pos=standings().indexOf(r)+1;
   const w = pos===1 ? {boost:2,missile:1,bullets:3,mine:4} : pos===racers.length ? {boost:4,missile:4,bullets:2,mine:1} : {boost:3,missile:3,bullets:3,mine:2};
   let s=Math.random()*Object.values(w).reduce((a,b)=>a+b); for(const k in w){ s-=w[k]; if(s<=0) return k; } return 'boost'; }
@@ -1675,7 +1722,7 @@ function drawHUD(t){
 let last=performance.now();
 function frame(now){ const dt=Math.min(.05,(now-last)/1000); last=now;
   update(dt); renderer.render(scene,camera); drawHUD(now/1000); requestAnimationFrame(frame); }
-goTitle(); updatePadUI(); $('loading').remove(); initShared(); initLive();
+applyCourse(savedCourse); goTitle(); updatePadUI(); $('loading').remove(); initShared(); initLive();
 requestAnimationFrame(frame);
 })();
 </script>
