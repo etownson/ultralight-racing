@@ -1,6 +1,7 @@
 # Ultralight Racing 3D — design & tuning notes
 
 Live game: https://claude.ai/artifact/JX51aHcu6bNdjfo7wtrYFE (single self-contained HTML, Three.js r159 inlined).
+Source repo: https://github.com/etownson/ultralight-racing (private) — `index.html` is the published file; commit after each republish.
 
 ## Flight model (aerobatic since 2026-11-06; Arcade removed 2026-11-03)
 Every plane (player, rivals, title demo, free-flight traffic) uses the same physics.
