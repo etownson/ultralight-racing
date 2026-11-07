@@ -87,7 +87,7 @@
     <div id="padStatus" class="pad">🎮 No controller detected. Connect one and press any button.</div>
     <div id="bestLine" class="best"></div>
     <div id="ttBoard" class="best" style="display:none"></div>
-    <div class="hint">Race: fly through the rings in order. Miss one and you skip to the next ring with a 5-second slowdown. Grab the <b>?</b> boxes for a ⚡ boost, 🚀 lock-on missile, 🔫 bullet burst or 💣 mine.<br>Combat: take off and shoot down every enemy plane. Guns fire in bursts (hold to keep firing); <b>?</b> boxes give 150 rounds or 4 lock-on missiles. Too much damage and your plane blows up. In 👥 Live you can fight them together: more enemies, and if you're shot down you're repaired on the runway in 30 s.<br>The faster you fly, the wider you turn, so ease off before sharp corners. Throttle in the red zone heats the engine; overheat and it cuts out.<br>Flying: it's fully aerobatic. Left/right rolls the plane and the wings stay where you leave them (a little dihedral eases shallow banks back to level). Back stick pulls g, so loop it from about 100 km/h; push past neutral for negative g and inverted flight. Hands off, it settles at the trimmed speed; trim nose-up or nose-down to change that. Throttle sets climb or descent. Steep turns need back pressure; pull too hard when slow and it stalls. To recover, release back pressure, add power, and use opposite rudder in a spin. Hold a look button to glance out the side when lining up to land.<br>Free flight: no rivals to beat. Land anywhere, take off again, buzz the treetops, but trees and buildings wreck the plane.<br>Touch: drag on the left half to fly, ＋/－ throttle, USE for pickups.</div>
+    <div class="hint">Race: fly through the rings in order. Miss one and you skip to the next ring with a 5-second slowdown. Grab the <b>?</b> boxes for a ⚡ boost, 🚀 lock-on missile, 🔫 bullet burst or 💣 mine.<br>Combat: take off and shoot down every enemy plane. Guns fire in bursts (hold to keep firing); <b>?</b> boxes give 50 rounds and 1 lock-on missile. Too much damage and your plane blows up. In 👥 Live you can fight them together: more enemies, and if you're shot down you're repaired on the runway in 30 s.<br>The faster you fly, the wider you turn, so ease off before sharp corners. Throttle in the red zone heats the engine; overheat and it cuts out.<br>Flying: it's fully aerobatic. Left/right rolls the plane and the wings stay where you leave them (a little dihedral eases shallow banks back to level). Back stick pulls g, so loop it from about 100 km/h; push past neutral for negative g and inverted flight. Hands off, it settles at the trimmed speed; trim nose-up or nose-down to change that. Throttle sets climb or descent. Steep turns need back pressure; pull too hard when slow and it stalls. To recover, release back pressure, add power, and use opposite rudder in a spin. Hold a look button to glance out the side when lining up to land.<br>Free flight: no rivals to beat. Land anywhere, take off again, buzz the treetops, but trees and buildings wreck the plane.<br>Touch: drag on the left half to fly, ＋/－ throttle, USE for pickups.</div>
   </div>
 </div>
 
@@ -945,7 +945,7 @@ function refreshTitle(){
   rows.forEach((el,i)=>{ el.style.outline=(padId&&i===titleRow)?'1px solid rgba(255,211,77,.5)':'none'; el.style.borderRadius='10px'; });
   $('modeRow').style.padding='6px';
   $('bRace').classList.toggle('alt',titleMode!=='race'); $('bTT').classList.toggle('alt',titleMode!=='tt'); $('bCombat').classList.toggle('alt',titleMode!=='combat'); $('bLive').classList.toggle('alt',titleMode!=='live'); $('bLive').style.display=ROOM?'':'none'; $('bFreeT').classList.toggle('alt',titleMode!=='free');
-  $('modeDesc').textContent = titleMode==='race' ? '3 laps against 3 rival pilots · pickups · engine heat' : titleMode==='tt' ? 'One-lap runs, back to the runway after each · race your best ghost'+(DB?' and friends’ fastest runs':'')+' · no pickups' : titleMode==='live' ? '👥 Race or fight alongside the friends who have the game open right now' : titleMode==='combat' ? `Dogfight: take off and shoot down all ${CB_N} enemy planes · ? boxes give 150 rounds or 4 missiles · shot down = game over` : 'Take off from the runway and fly anywhere · land in any field · watch your engine temp';
+  $('modeDesc').textContent = titleMode==='race' ? '3 laps against 3 rival pilots · pickups · engine heat' : titleMode==='tt' ? 'One-lap runs, back to the runway after each · race your best ghost'+(DB?' and friends’ fastest runs':'')+' · no pickups' : titleMode==='live' ? '👥 Race or fight alongside the friends who have the game open right now' : titleMode==='combat' ? `Dogfight: take off and shoot down all ${CB_N} enemy planes · ? boxes give 50 rounds + 1 missile · shot down = game over` : 'Take off from the runway and fly anywhere · land in any field · watch your engine temp';
   document.querySelectorAll('.opt').forEach(el=>{ el.style.borderRadius='10px'; el.style.padding='2px 6px'; });
   const b=loadBest()[bestKey()]; const cbb=loadBest()[cbBestKey()]; $('bestLine').textContent=b&&titleMode==='race'?`Your best on ${COURSES[course].n} · ${DIFFS[diff].n}: race ${fmt(b.race)} · lap ${fmt(b.lap)}`:titleMode==='combat'?(cbb&&cbb.cb?`Fastest victory · ${DIFFS[diff].n}: ${fmt(cbb.cb)}`:`Level ${DIFFS[diff].n} sets how well the bandits fly and shoot`):'';
   $('cName').textContent=COURSES[course].n; $('cTag').textContent=COURSES[course].tag; renderBoard($('ttBoard'));
@@ -1537,9 +1537,9 @@ function syncMesh(r){ r.fin.rotation.y=(r.rudder||0)*.55; r.root.position.set(r.
 // Enemies fly the same aerobatic model as everyone else: cbSteer() turns "point the nose this way" into roll rate + lift.
 // Single player: 10 enemies; too much damage and you blow up (game over). Co-op (over the live room): the host's browser
 // flies the enemies and puts their state in its 'st' messages; guests report their hits, the host sends back the damage
-// enemies do to them; shot-down pilots are repaired on the runway for 30 s. Pickups: 150 rounds or 4 lock-on missiles.
+// enemies do to them; shot-down pilots are repaired on the runway for 30 s. Pickups: 50 rounds + 1 lock-on missile each.
 const CB_N = 10, CB_MAX = 24, CB_REPAIR = 30, CB_HP = 100;
-const CB_START_AMMO = 200, CB_AMMO_BOX = 150, CB_AMMO_MAX = 999, CB_MSL_BOX = 4, CB_MSL_MAX = 12, CB_BURST = 8;
+const CB_START_AMMO = 200, CB_AMMO_BOX = 50, CB_AMMO_MAX = 999, CB_MSL_BOX = 1, CB_MSL_MAX = 12, CB_BURST = 8;
 const CB_BUL_SP = 115, CB_BUL_LIFE = 1.4, CB_MY_DMG = 5, CB_MSL_DMG = 100, CB_LOCK = [10, 380];
 // enemy skill per level: hp, max g, cruise throttle, aim error (rad), firing cone (deg), gap between bursts (s), rounds per
 // burst, damage per hit on you, attackers per human, reaction (s), chance to break when you're on their tail
@@ -1749,9 +1749,9 @@ function cbToRunway(){
   setAtt(player); player.root.visible=true; snapCam=true; clearDebris();
 }
 function cbPickup(){
-  const msl=Math.random()<.35;
-  if(msl){ const was=cbMe.msl; cbMe.msl=Math.min(CB_MSL_MAX,cbMe.msl+CB_MSL_BOX); say(`🚀 +${cbMe.msl-was} MISSILES · ${cbMe.msl} on board`,1.4,'#ffb3e0'); }
-  else { const was=cbMe.ammo; cbMe.ammo=Math.min(CB_AMMO_MAX,cbMe.ammo+CB_AMMO_BOX); say(`🔫 +${cbMe.ammo-was} ROUNDS · ${cbMe.ammo}`,1.4,'#ffb3e0'); }
+  const wa=cbMe.ammo, wm=cbMe.msl;
+  cbMe.ammo=Math.min(CB_AMMO_MAX,cbMe.ammo+CB_AMMO_BOX); cbMe.msl=Math.min(CB_MSL_MAX,cbMe.msl+CB_MSL_BOX);
+  say(`🔫 +${cbMe.ammo-wa} ROUNDS · 🚀 +${cbMe.msl-wm} MISSILE · ${cbMe.ammo} / ${cbMe.msl}`,1.4,'#ffb3e0');
   beep(660,.06,'triangle',.12); setTimeout(()=>beep(990,.06,'triangle',.12),60); setTimeout(()=>beep(1320,.1,'triangle',.12),120); rumble(.1,.3,80);
 }
 let cbBotFire=false;
