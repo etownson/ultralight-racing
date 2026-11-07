@@ -6,7 +6,7 @@ A browser-based 3D ultralight racing game, made for friends. Everything — game
 
 To run locally, open `index.html` in a browser (Chrome/Edge recommended for gamepads).
 
-Courses: **Lazy Sunday** (gentle), **Hump Day** (the original), **Manic Monday** (tight and steep), picked on the title menu.
+Courses: **Lazy Sunday** (gentle), **Hump Day** (the original), **Manic Monday** (tight and steep), **Freaky Friday** (hairpins, huge climbs and dives), picked on the title menu.
 
 Modes: **Race** (3 AI rivals, pickups), **Time Trial** (solo against your best ghost), **👥 Live** (race or free-fly with friends who have the game open — needs the artifact on claude.ai and an email invite; not available in a local copy) and **Free Flight**.
 

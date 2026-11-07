@@ -138,6 +138,7 @@ const S = 0.2;
 // Hump Day: avg turn 46°, max 96°, ring-to-ring climb avg 14 m, max 26 m.
 // Lazy Sunday: avg turn 29°, max 46°, climb avg 8 m, max 12 m (a smooth, flatter loop).
 // Manic Monday: avg turn 59°, max 108° (two hairpins), climb avg 18 m, max 30 m.
+// Freaky Friday: avg turn 76°, max 118° (four hairpins over 100°), climb avg 30 m, max 42 m (every leg a big climb or dive).
 const COURSES = [
   { id:'lazy',  n:'Lazy Sunday',  tag:'gentle turns · easy climbs',
     raw:[[700,2300],[1450,2425],[2200,2400],[2900,2325],[3425,2000],[3575,1450],[3450,900],[3000,525],[2350,475],[1700,650],[1100,600],[550,800],[300,1350],[350,1975]],
@@ -147,7 +148,10 @@ const COURSES = [
     alt:[14,22,34,26,44,28,50,40,24,14,32,48,30,18] },
   { id:'manic', n:'Manic Monday', tag:'tight turns · big climbs & dives',
     raw:[[700,2300],[1450,2450],[2150,2325],[2800,2475],[3450,2250],[3025,1675],[3550,1250],[3500,550],[2750,850],[2200,475],[1625,875],[950,500],[300,850],[550,1700]],
-    alt:[14,23,45,23,51,29,45,53,31,52,20,51,31,22] } ];
+    alt:[14,23,45,23,51,29,45,53,31,52,20,51,31,22] },
+  { id:'freaky', n:'Freaky Friday', tag:'hairpins · huge climbs & dives',
+    raw:[[700,2300],[1450,2450],[2000,2000],[2550,2450],[3350,2325],[2900,1725],[3550,1450],[3450,650],[2750,800],[2200,425],[1700,1100],[1250,450],[850,1100],[425,1475]],
+    alt:[14,33,19,55,24,68,36,66,22,74,24,66,28,24] } ];
 const DEFAULT_COURSE = 1;
 const courseOf = id => { const i=COURSES.findIndex(C=>C.id===id); return i<0?DEFAULT_COURSE:i; };
 let course = DEFAULT_COURSE;
