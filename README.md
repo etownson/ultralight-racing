@@ -8,11 +8,12 @@ To run locally, open `index.html` in a browser (Chrome/Edge recommended for game
 
 Courses: **Lazy Sunday** (gentle), **Hump Day** (the original), **Manic Monday** (tight and steep), **Freaky Friday** (hairpins, huge climbs and dives), picked on the title menu.
 
-Modes: **Race** (3 AI rivals, pickups), **Time Trial** (solo against your best ghost), **⚔ Combat** (take off and shoot down 10 enemy planes; co-op in Live with more enemies and 30 s repairs when you're shot down), **👥 Live** (race, fight co-op or free-fly with friends who have the game open — needs the artifact on claude.ai and an email invite; not available in a local copy) and **Free Flight**.
+Modes: **Race** (3 AI rivals, pickups), **Time Trial** (solo against your best ghost), **⚔ Combat** (take off and shoot down 10 enemy planes; co-op in Live with more enemies and 30 s repairs when you're shot down, or a **PVP dogfight** in Live — first to 5 kills, AI bandits optional), **👥 Live** (race, fight co-op or free-fly with friends who have the game open — needs the artifact on claude.ai and an email invite; not available in a local copy) and **Free Flight**.
 
 ## Files
 
 - `index.html` — the game (the same file that is published as the artifact)
+- `tests/` — headless jsdom harness and test scripts (see its README)
 - `docs/design-notes.md` — flight model, AI rivals, controls, tuning history and testing approach
 
 ## Workflow
