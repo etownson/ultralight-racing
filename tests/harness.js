@@ -21,10 +21,15 @@ function ctx2d() {
     return () => {};
   }, set(o, k, v) { o[k] = v; return true; } });
 }
+// --net: run every client through net/supabase-shim.js on a mock Supabase (tests/supa-mock.js) instead of the mock claude room
+const NET = process.argv.includes('--net');
+const supa = NET ? require('./supa-mock.js') : null;
+const shimSrc = NET ? fs.readFileSync(require('path').join(__dirname, '..', 'net', 'supabase-shim.js'), 'utf8') : '';
+const htmlFor = () => !NET ? html : html.replace('<script src="net/supabase-shim.js"></script>', () => '<script>' + shimSrc + '</script>');
 function makeClient(name) {
   const errors = [];
   const id = bus.clients.length, peer = 'peer' + id;
-  const dom = new JSDOM(html, { runScripts: 'dangerously', pretendToBeVisual: false, url: 'https://example.test/',
+  const dom = new JSDOM(htmlFor(), { runScripts: 'dangerously', pretendToBeVisual: false, url: 'https://example.test/',
     beforeParse(w) {
       w.Date.now = () => clock.t; w.performance.now = () => clock.t - 1.8e12;
       w.requestAnimationFrame = () => 0;
@@ -40,7 +45,10 @@ function makeClient(name) {
         onPeers() {}, onConnection(cb) { setTimeout(() => cb(true), 0); },
         presence() { return Promise.resolve(); }, peers() { return []; }, connected() { return true; },
         join() { return Promise.resolve(room); } };
-      w.claude = { use: async k => k === 'room' ? room : null };
+      if (NET) {
+        w.ULR_FORCE_NET = true; w.supabase = { createClient: () => supa.makeSupabase(bus, clock, id) };
+        w.localStorage.setItem('ulr3-online', JSON.stringify({ room: 'friends', pass: name === 'Mallory' ? 'guess' : 'pw', name: name || 'Pilot' + id }));
+      } else w.claude = { use: async k => k === 'room' ? room : null };
       w.__handlers = handlers;
     } });
   const c = { id, name, dom, w: dom.window, errors, ev: s => dom.window.__T.ev(s) };
@@ -52,8 +60,8 @@ function step(n, hudEvery = 0, frame = 0) {
   for (let i = 0; i < n; i++) {
     clock.t += 1000 / 60;
     bus.q.sort((a, b) => a.at - b.at);
-    while (bus.q.length && bus.q[0].at <= clock.t) { const e = bus.q.shift(); for (const h of (e.c.w.__handlers[e.topic] || [])) { try { h(e.m); } catch (err) { e.c.errors.push('handler: ' + err.stack); } } }
+    while (bus.q.length && bus.q[0].at <= clock.t) { const e = bus.q.shift(); if (e.fn) { try { e.fn(); } catch (err) { e.c && e.c.errors.push('fn: ' + err.stack); } continue; } for (const h of (e.c.w.__handlers[e.topic] || [])) { try { h(e.m); } catch (err) { e.c.errors.push('handler: ' + err.stack); } } }
     for (const c of bus.clients) { try { c.ev('update(1/60)'); if (hudEvery && (frame + i) % hudEvery === 0) c.ev('drawHUD(performance.now()/1000)'); } catch (err) { c.errors.push(err.stack); } }
   }
 }
-module.exports = { makeClient, ready, step, clock, bus };
+module.exports = { makeClient, ready, step, clock, bus, NET, supa };
