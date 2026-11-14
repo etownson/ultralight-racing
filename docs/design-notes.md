@@ -1,7 +1,7 @@
 # Ultralight Racing 3D — design & tuning notes
 
 Live game: https://claude.ai/artifact/JX51aHcu6bNdjfo7wtrYFE (single self-contained HTML, Three.js r159 inlined). Artifact UUID 8dde2439-b208-4790-a647-469bfc46d0ad. Declared capabilities (since 2026-11-07): `room`, `user {scopes:[profile]}`; runtime contract 0.2.96.
-Source repo: https://github.com/etownson/ultralight-racing (private) — `index.html` is the published file; commit after each republish.
+Source repo: https://github.com/etownson/ultralight-racing (public since 2026-11-14; served by GitHub Pages, see "Online play off claude.ai") — `index.html` is the published file; commit after each republish.
 
 ## Multiplayer (added 2026-11-07)
 Plan agreed with Eric: (1) remote-plane layer, (2) time-trial ghosts + leaderboard, (3) live races over the artifact `room`. All three are in the code.
