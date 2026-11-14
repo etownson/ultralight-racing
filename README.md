@@ -1,6 +1,6 @@
-# Ultralight Racing 3D
+# Ultra Ultralights
 
-A browser-based 3D ultralight racing game, made for friends. Everything — game code and Three.js r159 — lives in one self-contained file, `index.html`.
+Ultra Ultralights (formerly Ultralight Racing 3D) is a browser-based 3D ultralight flying game, made for friends. Everything — game code and Three.js r159 — lives in one self-contained file, `index.html`.
 
 **Play:** https://etownson.github.io/ultralight-racing/ (GitHub Pages; online play with a room passphrase) or the original artifact on claude.ai: https://claude.ai/artifact/JX51aHcu6bNdjfo7wtrYFE
 

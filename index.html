@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>Ultralight Racing 3D</title>
+<title>Ultra Ultralights</title>
 <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
   html,body{margin:0;height:100%;overflow:hidden;background:#9fd6f5;font-family:'Chakra Petch',system-ui,sans-serif;color:#fff;user-select:none;-webkit-user-select:none;touch-action:none}
@@ -12,7 +12,7 @@
   .overlay{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(20,50,70,.25);z-index:5}
   .hidden{display:none!important}
   .panel{background:rgba(16,28,30,.88);border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:24px 30px;max-width:580px;width:calc(100% - 40px);text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.35);max-height:calc(100% - 40px);overflow:auto;box-sizing:border-box}
-  h1{margin:0;font-size:44px;letter-spacing:3px;color:#ffd34d;line-height:1}
+  h1{margin:0;font-size:clamp(28px,7.4vw,44px);letter-spacing:3px;color:#ffd34d;line-height:1}
   h2{margin:0 0 14px;font-size:30px;letter-spacing:2px;color:#ffd34d}
   .sub{opacity:.75;margin:6px 0 16px;letter-spacing:1px}
   .opt{display:flex;align-items:center;justify-content:center;gap:12px;margin:6px 0 10px;font-size:18px}
@@ -60,7 +60,7 @@
 
 <div id="title" class="overlay">
   <div class="panel">
-    <h1>ULTRALIGHT</h1>
+    <h1>ULTRA ULTRALIGHTS</h1>
     <div class="sub">RING RACING · DOGFIGHTS · FREE FLIGHT</div>
     <div class="row modes" id="modeRow" style="margin:4px 0 14px"><button id="bRace" class="mode">🏁 RACE</button><button id="bTT" class="mode alt">⏱ TIME TRIAL</button><button id="bCombat" class="mode alt">⚔ COMBAT</button><button id="bLive" class="mode alt" style="display:none">👥 LIVE</button><button id="bFreeT" class="mode alt">✈ FREE FLIGHT</button></div>
     <div class="best" id="modeDesc" style="margin:-6px 0 12px"></div>
